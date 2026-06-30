@@ -159,8 +159,6 @@ If a guard sees the player during an interaction, the action is canceled and the
 | Mouse | Rotate camera |
 | E | Swap / Place dummy |
 | F | Steal / Recover dummy |
-| Esc | Unlock cursor |
-| Left Click | Lock cursor |
 
 ## Project Structure
 
