@@ -17,7 +17,8 @@ GameObject:
   - component: {fileID: 886078591337572473}
   - component: {fileID: 1411452898075649130}
   - component: {fileID: 7906242623261438696}
-  m_Layer: 0
+  - component: {fileID: 8494733307947907841}
+  m_Layer: 9
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -153,10 +154,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c10bd6325f5744546805f23da12593af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 4
+  walkSpeed: 4
+  dashSpeed: 7
   rotationSpeed: 12
   gravity: -20
   cameraTransform: {fileID: 0}
+  stopMovementWhileInteracting: 1
+  isMoving: 0
+  isSprinting: 0
+  moveAmount: 0
+  currentSpeed: 0
 --- !u!114 &886078591337572473
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -169,7 +176,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b427fa248bbd7c4e8bfe52d61991427, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxCapacity: 6
+  maxCapacity: 20
   startingItems:
   - data: {fileID: 11400000, guid: 4a78b26bc0c638141adf80ecc2953c9b, type: 2}
     isDummy: 1
@@ -214,6 +221,18 @@ MonoBehaviour:
   roomLayer:
     serializedVersion: 2
     m_Bits: 128
+--- !u!114 &8494733307947907841
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4416201601004492925}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15567d38032ebb94c9cef209ea20d000, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &8889424496319771278
 GameObject:
   m_ObjectHideFlags: 0
@@ -223,7 +242,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1816164494117959040}
-  m_Layer: 6
+  m_Layer: 9
   m_Name: InteractOrigin
   m_TagString: Untagged
   m_Icon: {fileID: 0}

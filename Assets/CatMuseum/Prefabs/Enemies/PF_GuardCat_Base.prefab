@@ -14,6 +14,8 @@ GameObject:
   - component: {fileID: 3809672838377168354}
   - component: {fileID: 5523474323939106219}
   - component: {fileID: 5554237764555262556}
+  - component: {fileID: 90851242574252289}
+  - component: {fileID: 4315637254811593494}
   m_Layer: 0
   m_Name: PF_GuardCat_Base
   m_TagString: Untagged
@@ -29,8 +31,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4371969663310796402}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: 2}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 6.52775, y: 1, z: 9.87605}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -141,7 +143,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4371969663310796402}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5ad26b6be27299b4e98a559ae01fa72b, type: 3}
   m_Name: 
@@ -153,3 +155,58 @@ MonoBehaviour:
   loop: 1
   waitTimeAtPoint: 1
   showDebugLog: 0
+--- !u!114 &90851242574252289
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4371969663310796402}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ab32d9720f253544ba56e90c008a757, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  viewDistance: 20
+  viewAngle: 80
+  eyeHeight: 1.2
+  targetHeight: 1
+  playerLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  artLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  obstacleLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  showDebugRay: 1
+  showDebugLog: 0
+--- !u!114 &4315637254811593494
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4371969663310796402}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 202a12576427bd948b3a775d142cf73e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  patrolPoints:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  loop: 1
+  waitTimeAtPoint: 1
+  patrolSpeed: 2
+  chaseSpeed: 4
+  searchSpeed: 2.5
+  loseSightTime: 2
+  catchDistance: 1.2
+  catchCooldown: 2
+  communicationDelay: 6
+  searchTime: 4
+  searchPointReachDistance: 0.5
+  showDebugLog: 1

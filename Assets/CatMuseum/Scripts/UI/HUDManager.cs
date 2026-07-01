@@ -43,14 +43,16 @@ public class HUDManager : MonoBehaviour
 
         float alertLevel = 0f;
         float maxAlertLevel = 100f;
+        AlertStage stage = AlertStage.Normal;
 
         if (AlertManager.Instance != null)
         {
             alertLevel = AlertManager.Instance.AlertLevel;
             maxAlertLevel = AlertManager.Instance.MaxAlertLevel;
+            stage = AlertManager.Instance.CurrentStage;
         }
 
-        alertText.text = $"Alert Level: {alertLevel:0} / {maxAlertLevel:0}";
+        alertText.text = $"Alert Level: {alertLevel:0} / {maxAlertLevel:0} [{stage}]";
     }
 
     private void UpdateCapacityText()

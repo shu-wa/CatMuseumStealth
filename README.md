@@ -1,173 +1,265 @@
 # Cat Museum Stealth
 
-## Overview
+## 概要
 
-Cat Museum Stealth is a 3D stealth game prototype developed in Unity.  
-The player controls a cute two-head-tall cat burglar who sneaks through a museum, steals artworks, swaps them with dummy items, and avoids being caught by patrolling guard cats.
+**Cat Museum Stealth** は、Unityで制作中の3Dステルスゲームです。  
+プレイヤーは2頭身の猫型怪盗となり、真昼間の美術館で観光客に紛れながら美術品を盗みます。
 
-This project focuses on gameplay systems, AI behavior, interaction design, and extensible Unity project structure.
+単に美術品を盗むだけではなく、警備員の巡回、視界、記憶共有、警戒レベル、ダミー交換を組み合わせたステルスゲームを目指しています。
 
-## Concept
+## ゲームコンセプト
 
-The core concept is a stealth game where the player must decide whether to safely swap an artwork with a matching dummy or quickly steal it by force.
+舞台は観光客で賑わう昼間の美術館です。  
+プレイヤーは観光客に紛れて行動するため、普通に歩いているだけでは警備員に追われません。
 
-Swapping is safer but takes longer.  
-Stealing is faster but increases the alert level more.  
-If a guard sees the player during an interaction, the action is canceled and the alert level increases.
+しかし、盗みの作業中を警備員に見られると、その警備員に顔を覚えられて追跡が始まります。  
+さらに、追跡されている様子を他の警備員に見られると、その警備員も追跡に参加します。  
+また、時間が経つと警備員同士で情報共有が行われ、他の警備員にもプレイヤーが認識されるようになります。
 
-## Implemented Features
+盗んだ瞬間には警戒レベルは上がらず、警備員が空になった展示台を見つけた時に警戒レベルが上昇します。  
+そのため、プレイヤーは盗んだ後にダミーを置いて発覚を遅らせたり、警備員の巡回ルートを避けながら行動する必要があります。
 
-### Player
+## 現在実装済みの機能
 
-- Third-person player movement
-- Camera-relative WASD movement
-- Shift dash
-- Movement lock during interaction
-- Animation-ready movement parameters:
+### プレイヤー操作
+
+- 三人称視点でのプレイヤー移動
+- カメラ基準のWASD移動
+- Shiftキーによるダッシュ
+- 作業中の移動制限
+- 後からアニメーションに接続しやすい移動状態の管理
   - `IsMoving`
   - `IsSprinting`
   - `MoveAmount`
   - `CurrentSpeed`
 
-### Camera
+### カメラ
 
-- Mouse-controlled third-person camera
-- Pitch and yaw control
-- Cursor lock/unlock
-- Camera collision using SphereCast
-- Camera does not pass through walls or ceilings
+- マウス操作による三人称カメラ
+- 上下回転の制限
+- カーソルロック / 解除
+- 壁や天井を透過しないカメラ衝突処理
+- `SphereCast` を用いたカメラ位置補正
 
-### Artwork Interaction
+### 美術品・ダミーシステム
 
-- Artwork data managed with ScriptableObject
-- Artworks have:
-  - Category
-  - Size
-  - Value
-  - Alert increase when stolen
-  - Alert increase when swapped
-- Dummy item system
-- Inventory capacity system
-- Interaction prompt UI
-- Timed interactions:
-  - Swap
-  - Steal
-  - Recover dummy
-  - Place dummy
-- Interaction progress shown on UI
-- Player cannot move during interactions
+- 美術品ごとのデータ管理
+  - 名前
+  - 種類
+  - サイズ
+  - 価値
+  - 発覚時の警戒度
+- `ScriptableObject` による美術品データ管理
+- 所持容量システム
+- ダミーアイテムとの交換
+- ダミーなしでの強奪
+- ダミーの回収
+- 空の展示台へのダミー設置
+- 美術品の状態管理
+  - 本物あり
+  - ダミーあり
+  - 空
+- インタラクト可能なオブジェクトの検出
+- UIによる操作案内
 
-### Dummy System
+### 作業時間つきインタラクト
 
-- Matching dummy is required for safe swapping
-- Dummy matching uses artwork category and size
-- After swapping, placed dummy can be recovered
-- Empty pedestals can be covered by placing a matching dummy
-- This creates strategic choices around risk, capacity, and item reuse
+美術品に対する操作は即時完了ではなく、一定時間の作業が必要です。
 
-### Alert System
+- ダミー交換
+- 強奪
+- ダミー回収
+- ダミー設置
 
-- Global alert level
-- Alert increases depending on action
-- Different thresholds for future gameplay expansion:
-  - Middle alert
-  - High alert
-  - Maximum alert
+作業中はプレイヤーが移動できなくなり、警備員に見られると作業がキャンセルされます。
 
-### Room System
+### 警戒レベル
 
-- Exhibition room zones
-- Current room is shown on UI
-- Room effects modify alert increase
-- Example room types:
-  - Painting Room
-  - Sculpture Room
-  - Special Room
+警戒レベルは、美術品を盗んだ瞬間ではなく、警備員が空の展示台を発見した時に上昇します。
 
-### Guard System
+警戒レベルには段階があります。
 
-- Guard patrol using NavMeshAgent
-- Patrol route with multiple points
-- Guard vision detection
-- Guards can detect the player during interaction
-- If caught during interaction:
-  - Interaction is canceled
-  - Alert level increases
-  - Warning message is shown
+| Alert Level | Stage |
+|---|---|
+| 0 - 24 | Normal |
+| 25 - 49 | Middle |
+| 50 - 79 | High |
+| 80 - 100 | Maximum |
+
+警戒レベルが上がると、警備員の能力が強化されます。
+
+- 視界距離が伸びる
+- 視野角が広がる
+- 巡回速度が上がる
+- 追跡速度が上がる
+- 捜索時間が長くなる
+
+### 展示室システム
+
+- 部屋ごとの効果設定
+- 現在いる部屋のUI表示
+- 展示室による警戒度補正
+- 絵画室、彫刻室、特別展示室などを想定
+
+### 警備員AI
+
+警備員は `NavMeshAgent` を用いて美術館内を巡回します。
+
+現在の警備員AIには以下の状態があります。
+
+| State | 内容 |
+|---|---|
+| Patrol | 巡回ポイントを順番に移動 |
+| Chase | プレイヤーを追跡 |
+| Search | 最後に見た場所を捜索 |
+
+### 警備員の視界判定
+
+警備員の視界判定には以下を使用しています。
+
+- 距離判定
+- 視野角判定
+- Raycastによる遮蔽物判定
+- `LayerMask` による対象の分類
+
+警備員が見る対象は主に以下です。
+
+- プレイヤー
+- 空になった展示台
+
+通常時にプレイヤーを見ただけでは追跡しません。  
+盗み作業中のプレイヤー、すでに覚えているプレイヤー、他の警備員に追われているプレイヤーを見た場合に追跡します。
+
+### 警備員の記憶・情報共有
+
+盗みの現場を見た警備員は、プレイヤーを記憶します。  
+その後、一定時間が経過すると他の警備員にも情報が共有されます。
+
+実装済みの挙動は以下です。
+
+- 盗み作業中を見た警備員が追跡を開始
+- その警備員はプレイヤーを記憶
+- 追跡中のプレイヤーを他の警備員が見ると、その警備員も追跡に参加
+- 時間経過で他の警備員にもプレイヤー情報を共有
+- 情報共有後は、普通に見られるだけでも追跡される
 
 ### UI
 
-- Alert level display
-- Inventory capacity display
-- Score display
-- Current room display
-- Interaction prompt
-- Interaction progress text
-- Notice messages
+- 警戒レベル表示
+- 警戒段階表示
+- 所持容量表示
+- スコア表示
+- 現在の部屋表示
+- インタラクト案内
+- 作業進捗表示
+- 警告メッセージ表示
 
-## Technical Highlights
+## 操作方法
 
-- Unity 3D / URP project
-- ScriptableObject-based data design
-- Component-based interaction system
-- Layer-based detection:
-  - Interactable
-  - Player
-  - Room
-  - CameraBlocker
-- NavMeshAgent patrol AI
-- SphereCast camera collision
-- OverlapSphere interaction detection
-- Guard vision using distance, angle, and obstacle raycast
-- Extensible class structure for future chase/search AI
-
-## Current Gameplay Loop
-
-1. The player explores the museum.
-2. The player approaches an artwork.
-3. The UI shows artwork value, size, category, and dummy availability.
-4. The player chooses:
-   - `E`: Swap with dummy
-   - `F`: Steal by force
-5. The action takes time.
-6. The player cannot move while interacting.
-7. If a guard sees the player during the action, the action is canceled.
-8. The alert level increases.
-9. The player tries to collect valuable artworks while managing risk and capacity.
-
-## Planned Features
-
-- Guard chase behavior
-- Guard search behavior after losing sight of the player
-- Guard memory system
-- Alert-level-based guard behavior
-- Carrying stolen items affecting suspicion
-- Body check system
-- Mouse toy distraction item
-- Multiple museum maps
-- Result screen
-- Save system
-- Character animations
-- Final cat character models and museum assets
-
-## Controls
-
-| Input | Action |
+| 入力 | 操作 |
 |---|---|
-| WASD | Move |
-| Shift + WASD | Dash |
-| Mouse | Rotate camera |
-| E | Swap / Place dummy |
-| F | Steal / Recover dummy |
+| WASD | 移動 |
+| Shift + WASD | ダッシュ |
+| Mouse | カメラ操作 |
+| E | ダミー交換 / ダミー設置 |
+| F | 強奪 / ダミー回収 |
+| Esc | カーソル解除 |
+| Left Click | カーソル固定 |
 
-## Project Structure
+## 使用技術
+
+- Unity
+- C#
+- Universal Render Pipeline
+- ScriptableObject
+- Prefab
+- NavMeshAgent
+- TextMeshPro
+- Physics.OverlapSphere
+- Physics.Raycast
+- Physics.SphereCast
+- LayerMask
+- Component-based design
+
+## 技術的に工夫した点
+
+### 1. 盗んだ瞬間ではなく、証拠発見で警戒レベルが上がる設計
+
+美術品を盗んだ瞬間に警戒レベルが上がるのではなく、警備員が空の展示台を見つけた時に警戒レベルが上がるようにしました。  
+これにより、プレイヤーは「盗む」だけでなく「発覚を遅らせる」ことも考える必要があります。
+
+### 2. ダミー交換によるリスク管理
+
+美術品はダミーと交換して盗むことができます。  
+ダミーを置けば空の展示台にならないため、警備員に発見されるリスクを下げられます。  
+一方で、交換には時間がかかるため、警備員の巡回タイミングを読む必要があります。
+
+### 3. 作業時間による緊張感
+
+盗みやダミー設置などの行動には作業時間を設定しています。  
+作業中は移動できず、警備員に見られるとキャンセルされるため、プレイヤーに緊張感を与えます。
+
+### 4. 警備員の記憶と情報共有
+
+盗みを見た警備員がプレイヤーを記憶し、時間経過で他の警備員にも情報を共有する仕組みを実装しています。  
+これにより、一度見られた後の行動リスクが高くなり、ゲーム展開に変化が生まれます。
+
+### 5. Alert Levelによる警備強化
+
+警戒レベルに応じて警備員の視界、速度、捜索時間が変化します。  
+これにより、ゲームが進むほど美術館内の警備が厳しくなるようにしています。
+
+### 6. 拡張しやすい構成
+
+美術品データは `ScriptableObject` で管理し、インタラクトや警備員AIはコンポーネント単位で分離しています。  
+今後の機能追加やデータ追加がしやすい構成を意識しています。
+
+## 現在のゲームループ
+
+1. プレイヤーが美術館内を移動する
+2. 美術品に近づく
+3. ダミーと交換するか、強奪するかを選ぶ
+4. 作業時間中に警備員に見られないようにする
+5. 盗んだ後、展示台が空のままだと警備員に発見される可能性がある
+6. 空の展示台を見られると警戒レベルが上がる
+7. 警戒レベルが上がるほど警備員が強化される
+8. 盗み現場を見られると追跡され、警備員に記憶される
+9. 時間経過で情報共有され、他の警備員にも追われやすくなる
+10. より高価な美術品を狙いながら、発覚と追跡を避ける
+
+## 今後実装したい機能
+
+- 警備員に捕まった時のゲームオーバー処理
+- 持ち物検査システム
+- ネズミのおもちゃによる警備員の注意そらし
+- 観光客NPCの追加
+- 警備員の種類追加
+- 警戒レベルに応じた警備員の増員
+- 盗品を出口まで持ち帰る脱出条件
+- リザルト画面
+- 複数ステージ
+- キャラクターアニメーション
+- 2頭身猫モデルへの差し替え
+- サウンド・効果音
+- プレイ動画の作成
+
+## プロジェクト構成
 
 ```text
 Assets/CatMuseum
 ├── Materials
 ├── Prefabs
+│   ├── Characters
+│   ├── Enemies
+│   ├── Interactables
+│   ├── MapParts
+│   └── UI
 ├── Scenes
+│   ├── Maps
+│   └── Test
 ├── ScriptableObjects
+│   ├── ArtData
+│   └── DummyData
 ├── Scripts
 │   ├── Camera
 │   ├── Core
@@ -181,9 +273,9 @@ Assets/CatMuseum
 └── Textures
 ```
 
-## Development Notes
+## 開発状況
 
-This project is being developed with scalability in mind.  
-Gameplay values are separated into ScriptableObjects where possible, reusable objects are managed as Prefabs, and map-specific objects are kept inside map scenes.
+現在はプロトタイプ段階です。  
+ゲームの基本的なシステムである、プレイヤー操作、美術品の盗み、ダミー交換、警戒レベル、警備員の巡回・視界・追跡・記憶共有までを実装しています。
 
-The current prototype prioritizes gameplay systems before final visual polish.
+今後は、ゲームオーバー処理、持ち物検査、観光客NPC、モデルやアニメーションの追加を行い、ポートフォリオ作品として完成度を高めていく予定です。

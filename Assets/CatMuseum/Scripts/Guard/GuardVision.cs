@@ -8,43 +8,90 @@ public class GuardVision : MonoBehaviour
     [SerializeField] private float eyeHeight = 1.2f;
     [SerializeField] private float targetHeight = 1.0f;
 
+    [Header("alert modifier")]
+    [SerializeField] private bool useAlertModifier = true;
+    [SerializeField] private float maxViewAngle = 150.0f;
+
     [Header("layers")]
     [SerializeField] private LayerMask playerLayer;
+    [SerializeField] private LayerMask artLayer;
     [SerializeField] private LayerMask obstacleLayer;
-
-    [Header("caught setting")]
-    [SerializeField] private float alertWhenCaughtInteracting = 40.0f;
-    [SerializeField] private float caughtCooldown = 2.0f;
 
     [Header("debug")]
     [SerializeField] private bool showDebugRay = true;
     [SerializeField] private bool showDebugLog = false;
 
-    private float caughtTimer = 0f;
+    public PlayerInteractor VisiblePlayer { get; private set; }
 
-    private void Update()
+    public float CurrentViewDistance
     {
-        UpdateCooldown();
-
-        PlayerInteractor player = FindVisiblePlayer();
-
-        if (player == null)
+        get
         {
-            return;
-        }
+            if (!useAlertModifier || AlertManager.Instance == null)
+            {
+                return viewDistance;
+            }
 
-        if (player.IsInteracting)
-        {
-            CatchPlayerInteracting(player);
+            return viewDistance * AlertManager.Instance.GuardViewDistanceMultiplier;
         }
     }
 
-    private void UpdateCooldown()
+    public float CurrentViewAngle
     {
-        if (caughtTimer > 0f)
+        get
         {
-            caughtTimer -= Time.deltaTime;
+            if (!useAlertModifier || AlertManager.Instance == null)
+            {
+                return viewAngle;
+            }
+
+            float modifiedAngle = viewAngle * AlertManager.Instance.GuardViewAngleMultiplier;
+            return Mathf.Min(modifiedAngle, maxViewAngle);
         }
+    }
+
+    public PlayerInteractor CheckVisiblePlayer()
+    {
+        VisiblePlayer = FindVisiblePlayer();
+        return VisiblePlayer;
+    }
+
+    public ArtPiece CheckVisibleEmptyArt()
+    {
+        Vector3 eyePosition = GetEyePosition();
+
+        Collider[] hits = Physics.OverlapSphere(
+            eyePosition,
+            CurrentViewDistance,
+            artLayer,
+            QueryTriggerInteraction.Collide
+        );
+
+        foreach (Collider hit in hits)
+        {
+            ArtPiece artPiece = hit.GetComponentInParent<ArtPiece>();
+
+            if (artPiece == null)
+            {
+                continue;
+            }
+
+            if (!artPiece.CanReportEmpty)
+            {
+                continue;
+            }
+
+            Vector3 targetPosition = artPiece.GetLookPosition();
+
+            if (!IsTargetVisible(targetPosition))
+            {
+                continue;
+            }
+
+            return artPiece;
+        }
+
+        return null;
     }
 
     private PlayerInteractor FindVisiblePlayer()
@@ -53,7 +100,7 @@ public class GuardVision : MonoBehaviour
 
         Collider[] hits = Physics.OverlapSphere(
             eyePosition,
-            viewDistance,
+            CurrentViewDistance,
             playerLayer,
             QueryTriggerInteraction.Ignore
         );
@@ -68,44 +115,9 @@ public class GuardVision : MonoBehaviour
             }
 
             Vector3 targetPosition = player.transform.position + Vector3.up * targetHeight;
-            Vector3 directionToPlayer = targetPosition - eyePosition;
 
-            float distanceToPlayer = directionToPlayer.magnitude;
-
-            if (distanceToPlayer > viewDistance)
+            if (!IsTargetVisible(targetPosition))
             {
-                continue;
-            }
-
-            float angleToPlayer = Vector3.Angle(transform.forward, directionToPlayer.normalized);
-
-            if (angleToPlayer > viewAngle * 0.5f)
-            {
-                continue;
-            }
-
-            bool blocked = Physics.Raycast(
-                eyePosition,
-                directionToPlayer.normalized,
-                out RaycastHit hitInfo,
-                distanceToPlayer,
-                obstacleLayer,
-                QueryTriggerInteraction.Ignore
-            );
-
-            if (showDebugRay)
-            {
-                Color rayColor = blocked ? Color.red : Color.green;
-                Debug.DrawRay(eyePosition, directionToPlayer.normalized * distanceToPlayer, rayColor);
-            }
-
-            if (blocked)
-            {
-                if (showDebugLog)
-                {
-                    Debug.Log("Guard vision blocked by: " + hitInfo.collider.gameObject.name);
-                }
-
                 continue;
             }
 
@@ -115,27 +127,54 @@ public class GuardVision : MonoBehaviour
         return null;
     }
 
-    private void CatchPlayerInteracting(PlayerInteractor player)
+    private bool IsTargetVisible(Vector3 targetPosition)
     {
-        if (caughtTimer > 0f)
+        Vector3 eyePosition = GetEyePosition();
+        Vector3 directionToTarget = targetPosition - eyePosition;
+
+        float distanceToTarget = directionToTarget.magnitude;
+
+        if (distanceToTarget > CurrentViewDistance)
         {
-            return;
+            return false;
         }
 
-        caughtTimer = caughtCooldown;
+        float angleToTarget = Vector3.Angle(transform.forward, directionToTarget.normalized);
 
-        Debug.Log("Player was caught while interacting");
-
-        player.ForceCancelInteraction("Seen by guard while interacting");
-        player.ShowNotice("Caught while interacting!");
-
-        if (AlertManager.Instance != null)
+        if (angleToTarget > CurrentViewAngle * 0.5f)
         {
-            AlertManager.Instance.AddAlert(alertWhenCaughtInteracting);
+            return false;
         }
+
+        bool blocked = Physics.Raycast(
+            eyePosition,
+            directionToTarget.normalized,
+            out RaycastHit hitInfo,
+            distanceToTarget,
+            obstacleLayer,
+            QueryTriggerInteraction.Ignore
+        );
+
+        if (showDebugRay)
+        {
+            Color rayColor = blocked ? Color.red : Color.green;
+            Debug.DrawRay(eyePosition, directionToTarget.normalized * distanceToTarget, rayColor);
+        }
+
+        if (blocked)
+        {
+            if (showDebugLog)
+            {
+                Debug.Log("Guard vision blocked by: " + hitInfo.collider.gameObject.name);
+            }
+
+            return false;
+        }
+
+        return true;
     }
 
-    private Vector3 GetEyePosition()
+    public Vector3 GetEyePosition()
     {
         return transform.position + Vector3.up * eyeHeight;
     }
@@ -144,13 +183,16 @@ public class GuardVision : MonoBehaviour
     {
         Vector3 eyePosition = transform.position + Vector3.up * eyeHeight;
 
+        float drawDistance = Application.isPlaying ? CurrentViewDistance : viewDistance;
+        float drawAngle = Application.isPlaying ? CurrentViewAngle : viewAngle;
+
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(eyePosition, viewDistance);
+        Gizmos.DrawWireSphere(eyePosition, drawDistance);
 
-        Vector3 leftDirection = Quaternion.Euler(0f, -viewAngle * 0.5f, 0f) * transform.forward;
-        Vector3 rightDirection = Quaternion.Euler(0f, viewAngle * 0.5f, 0f) * transform.forward;
+        Vector3 leftDirection = Quaternion.Euler(0f, -drawAngle * 0.5f, 0f) * transform.forward;
+        Vector3 rightDirection = Quaternion.Euler(0f, drawAngle * 0.5f, 0f) * transform.forward;
 
-        Gizmos.DrawLine(eyePosition, eyePosition + leftDirection * viewDistance);
-        Gizmos.DrawLine(eyePosition, eyePosition + rightDirection * viewDistance);
+        Gizmos.DrawLine(eyePosition, eyePosition + leftDirection * drawDistance);
+        Gizmos.DrawLine(eyePosition, eyePosition + rightDirection * drawDistance);
     }
 }

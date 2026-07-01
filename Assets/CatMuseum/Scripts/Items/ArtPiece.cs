@@ -23,14 +23,33 @@ public class ArtPiece : MonoBehaviour, IInteractable
     [SerializeField] private float recoverDummyDuration = 0.8f;
     [SerializeField] private float placeDummyDuration = 1.2f;
 
-    [Header("extra alert")]
-    [SerializeField] private float alertWhenRecoverDummy = 0f;
-    [SerializeField] private float alertWhenPlaceDummy = 0f;
+    [Header("guard check")]
+    [SerializeField] private float lookHeight = 0.8f;
 
     private ArtPieceState state = ArtPieceState.Real;
     private ArtData placedDummyData;
+    private bool hasBeenReportedEmpty = false;
 
     public bool CanInteract => true;
+
+    public bool IsReal => state == ArtPieceState.Real;
+    public bool HasDummy => state == ArtPieceState.Dummy;
+    public bool IsEmpty => state == ArtPieceState.Empty;
+
+    public bool CanReportEmpty => IsEmpty && !hasBeenReportedEmpty;
+
+    public string ArtDisplayName
+    {
+        get
+        {
+            if (artData == null)
+            {
+                return gameObject.name;
+            }
+
+            return artData.artName;
+        }
+    }
 
     private void Start()
     {
@@ -221,17 +240,12 @@ public class ArtPiece : MonoBehaviour, IInteractable
 
         if (!success)
         {
+            placedDummyData = null;
             return;
         }
 
         state = ArtPieceState.Dummy;
         UpdateVisual();
-
-        if (AlertManager.Instance != null)
-        {
-            float alertAmount = GetModifiedAlertAmount(player, artData.suspicionWhenSwapped, false);
-            AlertManager.Instance.AddAlert(alertAmount);
-        }
 
         Debug.Log($"{artData.artName} stolen with dummy. Value: {artData.value}");
     }
@@ -248,12 +262,6 @@ public class ArtPiece : MonoBehaviour, IInteractable
         placedDummyData = null;
         state = ArtPieceState.Empty;
         UpdateVisual();
-
-        if (AlertManager.Instance != null)
-        {
-            float alertAmount = GetModifiedAlertAmount(player, artData.suspicionWhenStolen, true);
-            AlertManager.Instance.AddAlert(alertAmount);
-        }
 
         Debug.Log($"{artData.artName} stolen by force. Value: {artData.value}");
     }
@@ -276,12 +284,6 @@ public class ArtPiece : MonoBehaviour, IInteractable
         placedDummyData = null;
         state = ArtPieceState.Empty;
         UpdateVisual();
-
-        if (AlertManager.Instance != null && alertWhenRecoverDummy > 0f)
-        {
-            float alertAmount = GetModifiedAlertAmount(player, alertWhenRecoverDummy, false);
-            AlertManager.Instance.AddAlert(alertAmount);
-        }
 
         Debug.Log("Dummy recovered");
     }
@@ -309,25 +311,32 @@ public class ArtPiece : MonoBehaviour, IInteractable
         state = ArtPieceState.Dummy;
         UpdateVisual();
 
-        if (AlertManager.Instance != null && alertWhenPlaceDummy > 0f)
-        {
-            float alertAmount = GetModifiedAlertAmount(player, alertWhenPlaceDummy, false);
-            AlertManager.Instance.AddAlert(alertAmount);
-        }
-
         Debug.Log("Dummy placed");
     }
 
-    private float GetModifiedAlertAmount(PlayerInteractor player, float baseAlertAmount, bool forceSteal)
+    public Vector3 GetLookPosition()
     {
-        PlayerRoomTracker roomTracker = player.GetComponent<PlayerRoomTracker>();
+        return transform.position + Vector3.up * lookHeight;
+    }
 
-        if (roomTracker == null)
+    public float GetEmptyAlertAmount()
+    {
+        if (artData == null)
         {
-            return baseAlertAmount;
+            return 20.0f;
         }
 
-        return roomTracker.GetModifiedAlertAmount(artData, baseAlertAmount, forceSteal);
+        return artData.suspicionWhenStolen;
+    }
+
+    public void ReportEmpty()
+    {
+        if (!CanReportEmpty)
+        {
+            return;
+        }
+
+        hasBeenReportedEmpty = true;
     }
 
     private void UpdateVisual()
