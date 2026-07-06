@@ -82,6 +82,20 @@ public class HUDManager : MonoBehaviour
             return;
         }
 
+        if (GameManager.Instance != null && GameManager.Instance.IsGameOver)
+        {
+            promptText.gameObject.SetActive(true);
+            promptText.text = $"GAME OVER\n{GameManager.Instance.GameOverMessage}\nPress R to Restart";
+            return;
+        }
+
+        if (GameManager.Instance != null && GameManager.Instance.IsClear)
+        {
+            promptText.gameObject.SetActive(true);
+            promptText.text = $"CLEAR!\n{GameManager.Instance.ClearMessage}\nPress R to Restart";
+            return;
+        }
+
         if (interactor.IsInteracting)
         {
             promptText.gameObject.SetActive(true);

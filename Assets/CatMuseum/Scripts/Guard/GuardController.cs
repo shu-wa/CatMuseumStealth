@@ -374,11 +374,17 @@ public class GuardController : MonoBehaviour
 
         targetPlayer.ShowNotice("Caught by guard!");
 
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.GameOver("Caught by guard");
+        }
+
         if (showDebugLog)
         {
             Debug.Log("Player caught by guard");
         }
     }
+
     private void ApplyCurrentStateSpeed()
     {
         if (agent == null)

@@ -39,6 +39,12 @@ public class PlayerInteractor : MonoBehaviour
 
     private void Update()
     {
+        if (GameManager.Instance != null && !GameManager.Instance.IsPlaying)
+        {
+            CurrentPrompt = "";
+            return;
+        }
+
         UpdateNoticeTimer();
 
         if (isInteracting)
