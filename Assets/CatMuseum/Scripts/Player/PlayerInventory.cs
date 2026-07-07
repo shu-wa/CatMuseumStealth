@@ -57,9 +57,79 @@ public class PlayerInventory : MonoBehaviour
 
     private void Awake()
     {
+        bool loadedFromProfile = LoadFromPlayerProfile();
+
+        if (!loadedFromProfile)
+        {
+            LoadStartingItems();
+        }
+
+        PrintInventory();
+    }
+
+    private bool LoadFromPlayerProfile()
+    {
+        if (PlayerProfile.Instance == null)
+        {
+            return false;
+        }
+
+        if (PlayerProfile.Instance.PackedItems == null)
+        {
+            return false;
+        }
+
+        if (PlayerProfile.Instance.PackedItems.Count == 0)
+        {
+            return false;
+        }
+
+        bool loadedAnyItem = false;
+
+        foreach (PackedBackpackItem packedItem in PlayerProfile.Instance.PackedItems)
+        {
+            if (packedItem == null || packedItem.itemData == null)
+            {
+                continue;
+            }
+
+            BackpackItemData backpackItem = packedItem.itemData;
+
+            if (backpackItem.itemType != BackpackItemType.Dummy)
+            {
+                continue;
+            }
+
+            if (backpackItem.linkedArtData == null)
+            {
+                Debug.LogWarning("Dummy item has no linked ArtData: " + backpackItem.itemName);
+                continue;
+            }
+
+            bool success = AddItem(backpackItem.linkedArtData, true);
+
+            if (success)
+            {
+                loadedAnyItem = true;
+            }
+        }
+
+        if (loadedAnyItem)
+        {
+            Debug.Log("Inventory loaded from backpack grid");
+        }
+
+        return loadedAnyItem;
+    }
+
+    private void LoadStartingItems()
+    {
         foreach (StartingInventoryItem startItem in startingItems)
         {
-            if (startItem.data == null) continue;
+            if (startItem.data == null)
+            {
+                continue;
+            }
 
             for (int i = 0; i < startItem.count; i++)
             {
@@ -67,7 +137,7 @@ public class PlayerInventory : MonoBehaviour
             }
         }
 
-        PrintInventory();
+        Debug.Log("Inventory loaded from starting items");
     }
 
     public int GetUsedCapacity()

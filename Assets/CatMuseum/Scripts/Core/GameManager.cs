@@ -12,14 +12,15 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
+    [Header("scene")]
+    [SerializeField] private string mainMenuSceneName = "MainMenu";
+
     [Header("game state")]
     [SerializeField] private GameState currentState = GameState.Playing;
 
-    [Header("game over")]
+    [Header("game end")]
     [SerializeField] private bool pauseOnGameEnd = true;
     [SerializeField] private string gameOverMessage = "Game Over";
-
-    [Header("clear")]
     [SerializeField] private string clearMessage = "Clear!";
 
     public GameState CurrentState => currentState;
@@ -39,6 +40,7 @@ public class GameManager : MonoBehaviour
         }
 
         Instance = this;
+        DontDestroyOnLoad(gameObject);
         Time.timeScale = 1f;
     }
 
@@ -48,9 +50,35 @@ public class GameManager : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.R))
             {
-                RestartCurrentScene();
+                ReturnToMainMenu();
             }
         }
+    }
+
+    public void StartMission(string sceneName)
+    {
+        if (string.IsNullOrEmpty(sceneName))
+        {
+            Debug.LogWarning("Scene name is empty");
+            return;
+        }
+
+        currentState = GameState.Playing;
+        Time.timeScale = 1f;
+
+        LockCursor();
+        SceneManager.LoadScene(sceneName);
+    }
+
+    public void StartSelectedMission()
+    {
+        if (PlayerProfile.Instance == null)
+        {
+            Debug.LogWarning("PlayerProfile is not found");
+            return;
+        }
+
+        StartMission(PlayerProfile.Instance.SelectedMapSceneName);
     }
 
     public void GameOver(string message)
@@ -93,12 +121,19 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void RestartCurrentScene()
+    public void ReturnToMainMenu()
     {
         Time.timeScale = 1f;
+        currentState = GameState.Playing;
 
-        Scene currentScene = SceneManager.GetActiveScene();
-        SceneManager.LoadScene(currentScene.name);
+        UnlockCursor();
+        SceneManager.LoadScene(mainMenuSceneName);
+    }
+
+    private void LockCursor()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     private void UnlockCursor()

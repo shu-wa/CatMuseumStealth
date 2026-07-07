@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72631e1de9749044ea91baa0230fe928, type: 3}
+  m_Name: BP_Dummy_LargeSculpture
+  m_EditorClassIdentifier: 
+  itemName: Large Sculpture Dummy
+  itemType: 0
+  width: 2
+  height: 3
+  price: 240
+  icon: {fileID: 0}
+  linkedArtData: {fileID: 11400000, guid: 6a81af1bdd1e92047ba7ad4d78bce2e0, type: 2}
+  supportType: 0

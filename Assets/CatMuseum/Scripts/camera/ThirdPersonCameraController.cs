@@ -42,6 +42,12 @@ public class ThirdPersonCameraController : MonoBehaviour
             return;
         }
 
+        if (BackpackMenuUI.IsAnyBackpackOpen)
+        {
+            UpdateCameraPosition();
+            return;
+        }
+
         HandleCursor();
         HandleMouseInput();
         UpdateCameraPosition();

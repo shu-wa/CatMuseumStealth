@@ -85,14 +85,14 @@ public class HUDManager : MonoBehaviour
         if (GameManager.Instance != null && GameManager.Instance.IsGameOver)
         {
             promptText.gameObject.SetActive(true);
-            promptText.text = $"GAME OVER\n{GameManager.Instance.GameOverMessage}\nPress R to Restart";
+            promptText.text = $"GAME OVER\n{GameManager.Instance.GameOverMessage}\nPress R to Return to Main Menu";
             return;
         }
 
         if (GameManager.Instance != null && GameManager.Instance.IsClear)
         {
             promptText.gameObject.SetActive(true);
-            promptText.text = $"CLEAR!\n{GameManager.Instance.ClearMessage}\nPress R to Restart";
+            promptText.text = $"CLEAR!\n{GameManager.Instance.ClearMessage}\nPress R to Return to Main Menu";
             return;
         }
 

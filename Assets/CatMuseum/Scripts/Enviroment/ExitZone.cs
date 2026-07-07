@@ -50,9 +50,14 @@ public class ExitZone : MonoBehaviour
             return;
         }
 
+        if (PlayerProfile.Instance != null)
+        {
+            PlayerProfile.Instance.AddMoney(inventory.TotalStolenValue);
+        }
+
         if (GameManager.Instance != null)
         {
-            string message = $"{clearMessage}\nScore: {inventory.TotalStolenValue}";
+            string message = $"{clearMessage}\nReward: {inventory.TotalStolenValue} coins";
             GameManager.Instance.ClearGame(message);
         }
     }
