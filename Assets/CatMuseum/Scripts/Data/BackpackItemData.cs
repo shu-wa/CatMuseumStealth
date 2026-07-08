@@ -24,6 +24,9 @@ public class BackpackItemData : ScriptableObject
     [Min(1)] public int width = 1;
     [Min(1)] public int height = 1;
 
+    [Header("rotation")]
+    public bool canRotate = true;
+
     [Header("shop")]
     [Min(0)] public int price = 50;
 
@@ -37,4 +40,14 @@ public class BackpackItemData : ScriptableObject
     public SupportItemType supportType = SupportItemType.None;
 
     public int Area => width * height;
+
+    public int GetWidth(bool rotated)
+    {
+        return rotated ? height : width;
+    }
+
+    public int GetHeight(bool rotated)
+    {
+        return rotated ? width : height;
+    }
 }

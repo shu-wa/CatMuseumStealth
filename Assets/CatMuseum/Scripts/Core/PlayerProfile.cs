@@ -14,6 +14,7 @@ public class PackedBackpackItem
     public BackpackItemData itemData;
     public int gridX;
     public int gridY;
+    public bool rotated;
 }
 
 public class PlayerProfile : MonoBehaviour
@@ -203,11 +204,16 @@ public class PlayerProfile : MonoBehaviour
         Debug.Log($"{itemData.itemName} owned: {ownedItem.count}");
     }
 
-    public bool PlaceItemFromOwned(BackpackItemData itemData, int gridX, int gridY)
+    public bool PlaceItemFromOwned(BackpackItemData itemData, int gridX, int gridY, bool rotated)
     {
         if (itemData == null)
         {
             return false;
+        }
+
+        if (rotated && !itemData.canRotate)
+        {
+            rotated = false;
         }
 
         if (GetOwnedCount(itemData) <= 0)
@@ -216,7 +222,7 @@ public class PlayerProfile : MonoBehaviour
             return false;
         }
 
-        if (!CanPlaceItem(itemData, gridX, gridY))
+        if (!CanPlaceItem(itemData, gridX, gridY, rotated))
         {
             Debug.Log("Cannot place item: " + itemData.itemName);
             return false;
@@ -228,12 +234,13 @@ public class PlayerProfile : MonoBehaviour
         {
             itemData = itemData,
             gridX = gridX,
-            gridY = gridY
+            gridY = gridY,
+            rotated = rotated
         };
 
         packedItems.Add(packedItem);
 
-        Debug.Log($"Placed item: {itemData.itemName} at ({gridX}, {gridY})");
+        Debug.Log($"Placed item: {itemData.itemName} at ({gridX}, {gridY}) rotated: {rotated}");
         return true;
     }
 
@@ -259,19 +266,22 @@ public class PlayerProfile : MonoBehaviour
         return true;
     }
 
-    public bool CanPlaceItem(BackpackItemData itemData, int gridX, int gridY)
+    public bool CanPlaceItem(BackpackItemData itemData, int gridX, int gridY, bool rotated)
     {
         if (itemData == null)
         {
             return false;
         }
 
-        if (!IsAreaInsideGrid(gridX, gridY, itemData.width, itemData.height))
+        int itemWidth = itemData.GetWidth(rotated);
+        int itemHeight = itemData.GetHeight(rotated);
+
+        if (!IsAreaInsideGrid(gridX, gridY, itemWidth, itemHeight))
         {
             return false;
         }
 
-        return IsAreaFree(gridX, gridY, itemData.width, itemData.height);
+        return IsAreaFree(gridX, gridY, itemWidth, itemHeight);
     }
 
     public PackedBackpackItem GetPackedItemAtCell(int cellX, int cellY)
@@ -283,13 +293,16 @@ public class PlayerProfile : MonoBehaviour
                 continue;
             }
 
+            int itemWidth = packedItem.itemData.GetWidth(packedItem.rotated);
+            int itemHeight = packedItem.itemData.GetHeight(packedItem.rotated);
+
             bool insideX =
                 cellX >= packedItem.gridX &&
-                cellX < packedItem.gridX + packedItem.itemData.width;
+                cellX < packedItem.gridX + itemWidth;
 
             bool insideY =
                 cellY >= packedItem.gridY &&
-                cellY < packedItem.gridY + packedItem.itemData.height;
+                cellY < packedItem.gridY + itemHeight;
 
             if (insideX && insideY)
             {
@@ -394,5 +407,59 @@ public class PlayerProfile : MonoBehaviour
         }
 
         return null;
+    }
+
+    public bool CanMovePackedItem(PackedBackpackItem packedItem, int newGridX, int newGridY, bool rotated)
+    {
+        if (packedItem == null || packedItem.itemData == null)
+        {
+            return false;
+        }
+
+        int oldX = packedItem.gridX;
+        int oldY = packedItem.gridY;
+        bool oldRotated = packedItem.rotated;
+
+        packedItem.gridX = -999;
+        packedItem.gridY = -999;
+
+        bool canPlace = CanPlaceItem(packedItem.itemData, newGridX, newGridY, rotated);
+
+        packedItem.gridX = oldX;
+        packedItem.gridY = oldY;
+        packedItem.rotated = oldRotated;
+
+        return canPlace;
+    }
+    public bool MovePackedItem(PackedBackpackItem packedItem, int newGridX, int newGridY, bool rotated)
+    {
+        if (packedItem == null || packedItem.itemData == null)
+        {
+            return false;
+        }
+
+        int oldX = packedItem.gridX;
+        int oldY = packedItem.gridY;
+        bool oldRotated = packedItem.rotated;
+
+        packedItem.gridX = -999;
+        packedItem.gridY = -999;
+
+        bool canPlace = CanPlaceItem(packedItem.itemData, newGridX, newGridY, rotated);
+
+        packedItem.gridX = oldX;
+        packedItem.gridY = oldY;
+        packedItem.rotated = oldRotated;
+
+        if (!canPlace)
+        {
+            return false;
+        }
+
+        packedItem.gridX = newGridX;
+        packedItem.gridY = newGridY;
+        packedItem.rotated = rotated;
+
+        return true;
     }
 }

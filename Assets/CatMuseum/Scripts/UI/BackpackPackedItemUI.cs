@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class BackpackPackedItemUI : MonoBehaviour, IPointerClickHandler
+public class BackpackPackedItemUI : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     [Header("ui")]
     [SerializeField] private TextMeshProUGUI nameText;
@@ -30,8 +30,11 @@ public class BackpackPackedItemUI : MonoBehaviour, IPointerClickHandler
         {
             float pitch = cellSize + cellGap;
 
-            float width = itemData.width * cellSize + (itemData.width - 1) * cellGap;
-            float height = itemData.height * cellSize + (itemData.height - 1) * cellGap;
+            int itemWidth = itemData.GetWidth(packedItem.rotated);
+            int itemHeight = itemData.GetHeight(packedItem.rotated);
+
+            float width = itemWidth * cellSize + (itemWidth - 1) * cellGap;
+            float height = itemHeight * cellSize + (itemHeight - 1) * cellGap;
 
             rectTransform.anchorMin = new Vector2(0f, 1f);
             rectTransform.anchorMax = new Vector2(0f, 1f);
@@ -53,6 +56,7 @@ public class BackpackPackedItemUI : MonoBehaviour, IPointerClickHandler
         {
             iconImage.sprite = itemData.icon;
             iconImage.color = itemData.icon != null ? Color.white : new Color(0.3f, 0.3f, 0.3f, 0.85f);
+            iconImage.raycastTarget = true;
         }
     }
 
@@ -62,5 +66,36 @@ public class BackpackPackedItemUI : MonoBehaviour, IPointerClickHandler
         {
             menuUI?.RemovePackedItem(packedItem);
         }
+    }
+
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        if (eventData.button != PointerEventData.InputButton.Left)
+        {
+            return;
+        }
+
+        if (menuUI == null || packedItem == null)
+        {
+            return;
+        }
+
+        menuUI.BeginMovePackedItem(packedItem);
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        // Unityにドラッグ対象として認識させるために必要。
+        // 実際の追従処理はBackpackMenuUI側で行う。
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        if (eventData.button != PointerEventData.InputButton.Left)
+        {
+            return;
+        }
+
+        menuUI?.EndDragItem();
     }
 }

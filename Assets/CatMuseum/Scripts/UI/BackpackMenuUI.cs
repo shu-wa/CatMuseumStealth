@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class BackpackMenuUI : MonoBehaviour
 {
@@ -32,6 +33,28 @@ public class BackpackMenuUI : MonoBehaviour
     [SerializeField] private Button backpackButton;
     [SerializeField] private TextMeshProUGUI backpackButtonText;
 
+    [Header("dragIcon")]
+    [SerializeField] private RectTransform dragIconRect;
+    [SerializeField] private RectTransform dragPreviewRoot;
+    [SerializeField] private Color dragPreviewCellColor = new Color(1f, 1f, 1f, 0.35f);
+    [SerializeField] private Color dragPreviewBorderColor = new Color(0f, 0f, 0f, 0.35f);
+    [SerializeField] private RectTransform dragPreviewIconRect;
+    [SerializeField] private Image dragPreviewIconImage;
+    [SerializeField] private Color dragPreviewIconColor = new Color(1f, 1f, 1f, 0.75f);
+
+
+    [Header("placement visual")]
+    [SerializeField] private Color dragPreviewValidColor = new Color(0.2f, 1f, 0.35f, 0.45f);
+    [SerializeField] private Color dragPreviewInvalidColor = new Color(1f, 0.2f, 0.2f, 0.45f);
+
+
+
+
+    private readonly List<Image> dragPreviewImages = new List<Image>();
+    private readonly List<GameObject> dragPreviewCells = new List<GameObject>();
+
+    private PackedBackpackItem draggingPackedItem;
+    private bool isMovingPackedItem = false;
     public static bool IsAnyBackpackOpen { get; private set; }
 
     private Canvas rootCanvas;
@@ -41,12 +64,13 @@ public class BackpackMenuUI : MonoBehaviour
 
     private BackpackItemData draggingItem;
     private bool isDragging = false;
+    private bool draggingRotated = false;
     private BackpackGridCellUI hoveredCell;
 
     private int generatedGridWidth = -1;
     private int generatedGridHeight = -1;
 
-    private RectTransform dragIconRect;
+
     private Image dragIconImage;
     private TextMeshProUGUI dragIconText;
     private CanvasGroup dragIconCanvasGroup;
@@ -61,8 +85,6 @@ public class BackpackMenuUI : MonoBehaviour
         {
             canvasRect = rootCanvas.transform as RectTransform;
         }
-
-        CreateDragIcon();
 
         if (closeButton != null)
         {
@@ -79,6 +101,24 @@ public class BackpackMenuUI : MonoBehaviour
         if (panelRoot != null)
         {
             panelRoot.SetActive(false);
+        }
+        if (dragIconImage != null)
+        {
+            dragIconImage.raycastTarget = false;
+        }
+
+        if (dragIconRect != null)
+        {
+            CanvasGroup canvasGroup = dragIconRect.GetComponent<CanvasGroup>();
+
+            if (canvasGroup == null)
+            {
+                canvasGroup = dragIconRect.gameObject.AddComponent<CanvasGroup>();
+            }
+
+            canvasGroup.blocksRaycasts = false;
+            canvasGroup.interactable = false;
+            dragIconRect.gameObject.SetActive(false);
         }
     }
 
@@ -97,7 +137,13 @@ public class BackpackMenuUI : MonoBehaviour
 
         if (isDragging)
         {
+            if (Input.GetKeyDown(KeyCode.R))
+            {
+                ToggleDraggingRotation();
+            }
+
             UpdateDragIconPosition();
+            UpdateDragPreviewColor();
         }
     }
 
@@ -133,6 +179,33 @@ public class BackpackMenuUI : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
+    private void UpdateDragPreviewIcon()
+    {
+        if (draggingItem == null || dragPreviewIconRect == null || dragPreviewIconImage == null)
+        {
+            return;
+        }
+
+        int width = draggingItem.GetWidth(draggingRotated);
+        int height = draggingItem.GetHeight(draggingRotated);
+
+        float previewCellSize = 48f;
+        float previewCellGap = 4f;
+
+        float iconWidth = width * previewCellSize + (width - 1) * previewCellGap;
+        float iconHeight = height * previewCellSize + (height - 1) * previewCellGap;
+
+        dragPreviewIconRect.sizeDelta = new Vector2(iconWidth, iconHeight);
+        dragPreviewIconRect.anchoredPosition = Vector2.zero;
+
+        dragPreviewIconImage.sprite = draggingItem.icon;
+        dragPreviewIconImage.color = draggingItem.icon != null
+            ? dragPreviewIconColor
+            : new Color(0f, 0f, 0f, 0f);
+
+        dragPreviewIconImage.raycastTarget = false;
+        dragPreviewIconImage.enabled = draggingItem.icon != null;
+    }
 
     public void ToggleBackpack()
     {
@@ -153,6 +226,7 @@ public class BackpackMenuUI : MonoBehaviour
         {
             ShowNotice("Backpack removed");
         }
+        UpdateDragPreviewIcon();
     }
 
     public void BuyItem(BackpackItemData itemData)
@@ -181,6 +255,155 @@ public class BackpackMenuUI : MonoBehaviour
 
         RefreshAll();
     }
+    private void BuildDragPreview()
+    {
+        ClearDragPreview();
+
+        if (draggingItem == null || dragPreviewRoot == null)
+        {
+            return;
+        }
+
+        int width = draggingItem.GetWidth(draggingRotated);
+        int height = draggingItem.GetHeight(draggingRotated);
+
+        float previewCellSize = 48f;
+        float previewCellGap = 4f;
+        float pitch = previewCellSize + previewCellGap;
+
+        dragPreviewRoot.sizeDelta = new Vector2(
+            width * previewCellSize + (width - 1) * previewCellGap,
+            height * previewCellSize + (height - 1) * previewCellGap
+        );
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                GameObject cellObject = new GameObject("DragPreviewCell", typeof(RectTransform), typeof(Image));
+                cellObject.transform.SetParent(dragPreviewRoot, false);
+
+                RectTransform cellRect = cellObject.GetComponent<RectTransform>();
+                cellRect.anchorMin = new Vector2(0f, 1f);
+                cellRect.anchorMax = new Vector2(0f, 1f);
+                cellRect.pivot = new Vector2(0f, 1f);
+                cellRect.sizeDelta = new Vector2(previewCellSize, previewCellSize);
+                cellRect.anchoredPosition = new Vector2(x * pitch, -y * pitch);
+
+                Image image = cellObject.GetComponent<Image>();
+                image.color = dragPreviewCellColor;
+                image.raycastTarget = false;
+                dragPreviewImages.Add(image);
+
+                Outline outline = cellObject.AddComponent<Outline>();
+                outline.effectColor = dragPreviewBorderColor;
+                outline.effectDistance = new Vector2(1f, -1f);
+
+                dragPreviewCells.Add(cellObject);
+            }
+        }
+        UpdateDragPreviewIcon();
+    }
+
+    private void UpdateDragPreviewColor()
+    {
+        if (!isDragging || draggingItem == null)
+        {
+            SetDragPreviewColor(dragPreviewCellColor);
+            return;
+        }
+
+        if (!TryGetGridPositionFromMouse(out int gridX, out int gridY))
+        {
+            SetDragPreviewColor(dragPreviewCellColor);
+            return;
+        }
+
+        bool canPlace;
+
+        if (isMovingPackedItem && PlayerProfile.Instance != null)
+        {
+            canPlace = PlayerProfile.Instance.CanMovePackedItem(
+                draggingPackedItem,
+                gridX,
+                gridY,
+                draggingRotated
+            );
+        }
+        else if (PlayerProfile.Instance != null)
+        {
+            canPlace = PlayerProfile.Instance.CanPlaceItem(
+                draggingItem,
+                gridX,
+                gridY,
+                draggingRotated
+            );
+        }
+        else
+        {
+            canPlace = false;
+        }
+
+        SetDragPreviewColor(canPlace ? dragPreviewValidColor : dragPreviewInvalidColor);
+    }
+
+    private void SetDragPreviewColor(Color color)
+    {
+        for (int i = 0; i < dragPreviewImages.Count; i++)
+        {
+            if (dragPreviewImages[i] != null)
+            {
+                dragPreviewImages[i].color = color;
+            }
+        }
+    }
+
+    private void ClearDragPreview()
+    {
+        for (int i = 0; i < dragPreviewCells.Count; i++)
+        {
+            if (dragPreviewCells[i] != null)
+            {
+                Destroy(dragPreviewCells[i]);
+            }
+        }
+
+        dragPreviewCells.Clear();
+    }
+
+    public void BeginMovePackedItem(PackedBackpackItem packedItem)
+    {
+        if (packedItem == null || packedItem.itemData == null)
+        {
+            return;
+        }
+
+        draggingPackedItem = packedItem;
+        draggingItem = packedItem.itemData;
+        draggingRotated = packedItem.rotated;
+        isDragging = true;
+        isMovingPackedItem = true;
+
+        BuildDragPreview();
+
+        if (dragIconImage != null)
+        {
+            dragIconImage.sprite = draggingItem.icon;
+            dragIconImage.enabled = draggingItem.icon != null;
+        }
+
+        if (dragIconRect != null)
+        {
+            dragIconRect.gameObject.SetActive(true);
+
+            float iconWidth = draggingItem.GetWidth(draggingRotated) * 48f;
+            float iconHeight = draggingItem.GetHeight(draggingRotated) * 48f;
+            dragIconRect.sizeDelta = new Vector2(iconWidth, iconHeight);
+        }
+
+        ShowNotice("Move item / R: Rotate");
+        UpdateDragIconPosition();
+    }
 
     public bool BeginDragItem(BackpackItemData itemData)
     {
@@ -203,10 +426,17 @@ public class BackpackMenuUI : MonoBehaviour
 
         draggingItem = itemData;
         isDragging = true;
+        draggingRotated = false;
+
+        BuildDragPreview();
 
         if (dragIconRect != null)
         {
             dragIconRect.gameObject.SetActive(true);
+
+            float iconWidth = itemData.GetWidth(draggingRotated) * 48f;
+            float iconHeight = itemData.GetHeight(draggingRotated) * 48f;
+            dragIconRect.sizeDelta = new Vector2(iconWidth, iconHeight);
         }
 
         if (dragIconImage != null)
@@ -222,6 +452,7 @@ public class BackpackMenuUI : MonoBehaviour
             dragIconText.text = itemData.itemName;
         }
 
+        ShowNotice("Drag to grid / R: Rotate");
         UpdateDragIconPosition();
         return true;
     }
@@ -252,15 +483,30 @@ public class BackpackMenuUI : MonoBehaviour
             return;
         }
 
-        bool success = PlayerProfile.Instance.PlaceItemFromOwned(
-            draggingItem,
-            gridX,
-            gridY
-        );
+        bool success;
+
+        if (isMovingPackedItem)
+        {
+            success = PlayerProfile.Instance.MovePackedItem(
+                draggingPackedItem,
+                gridX,
+                gridY,
+                draggingRotated
+            );
+        }
+        else
+        {
+            success = PlayerProfile.Instance.PlaceItemFromOwned(
+                draggingItem,
+                gridX,
+                gridY,
+                draggingRotated
+            );
+        }
 
         if (success)
         {
-            ShowNotice("Packed: " + draggingItem.itemName);
+            ShowNotice(isMovingPackedItem ? "Moved item" : "Packed: " + draggingItem.itemName);
         }
         else
         {
@@ -274,12 +520,22 @@ public class BackpackMenuUI : MonoBehaviour
     public void CancelDrag()
     {
         draggingItem = null;
+        draggingPackedItem = null;
         isDragging = false;
+        isMovingPackedItem = false;
+        draggingRotated = false;
         hoveredCell = null;
+
+        ClearDragPreview();
 
         if (dragIconRect != null)
         {
             dragIconRect.gameObject.SetActive(false);
+            dragPreviewImages.Clear();
+        }
+        if (dragPreviewIconImage != null)
+        {
+            dragPreviewIconImage.enabled = false;
         }
     }
 
@@ -501,8 +757,20 @@ public class BackpackMenuUI : MonoBehaviour
         float fromLeft = localPoint.x - rect.xMin;
         float fromTop = rect.yMax - localPoint.y;
 
-        gridX = Mathf.FloorToInt(fromLeft / CellPitch);
-        gridY = Mathf.FloorToInt(fromTop / CellPitch);
+        if (draggingItem != null)
+        {
+            int itemWidth = draggingItem.GetWidth(draggingRotated);
+            int itemHeight = draggingItem.GetHeight(draggingRotated);
+
+            float itemPixelWidth = itemWidth * cellSize + (itemWidth - 1) * cellGap;
+            float itemPixelHeight = itemHeight * cellSize + (itemHeight - 1) * cellGap;
+
+            fromLeft -= itemPixelWidth * 0.5f;
+            fromTop -= itemPixelHeight * 0.5f;
+        }
+
+        gridX = Mathf.RoundToInt(fromLeft / CellPitch);
+        gridY = Mathf.RoundToInt(fromTop / CellPitch);
 
         if (gridX < 0 || gridY < 0)
         {
@@ -581,59 +849,70 @@ public class BackpackMenuUI : MonoBehaviour
         generatedGridHeight = height;
     }
 
-    private void CreateDragIcon()
+    private void ToggleDraggingRotation()
     {
-        if (rootCanvas == null)
+        if (draggingItem == null)
         {
             return;
         }
 
-        GameObject iconObject = new GameObject("BackpackDragIcon");
-        iconObject.transform.SetParent(rootCanvas.transform, false);
+        if (!draggingItem.canRotate)
+        {
+            ShowNotice("This item cannot rotate");
+            return;
+        }
 
-        dragIconRect = iconObject.AddComponent<RectTransform>();
-        dragIconRect.sizeDelta = new Vector2(120f, 60f);
+        if (draggingItem.width == draggingItem.height)
+        {
+            ShowNotice("Rotation does not change this item");
+            return;
+        }
 
-        dragIconImage = iconObject.AddComponent<Image>();
-        dragIconImage.color = new Color(0.2f, 0.2f, 0.2f, 0.85f);
+        draggingRotated = !draggingRotated;
 
-        dragIconCanvasGroup = iconObject.AddComponent<CanvasGroup>();
-        dragIconCanvasGroup.blocksRaycasts = false;
+        if (dragIconRect != null)
+        {
+            float iconWidth = draggingItem.GetWidth(draggingRotated) * 48f;
+            float iconHeight = draggingItem.GetHeight(draggingRotated) * 48f;
+            dragIconRect.sizeDelta = new Vector2(iconWidth, iconHeight);
+        }
 
-        GameObject textObject = new GameObject("Text");
-        textObject.transform.SetParent(iconObject.transform, false);
-
-        RectTransform textRect = textObject.AddComponent<RectTransform>();
-        textRect.anchorMin = Vector2.zero;
-        textRect.anchorMax = Vector2.one;
-        textRect.offsetMin = Vector2.zero;
-        textRect.offsetMax = Vector2.zero;
-
-        dragIconText = textObject.AddComponent<TextMeshProUGUI>();
-        dragIconText.alignment = TextAlignmentOptions.Center;
-        dragIconText.fontSize = 18f;
-        dragIconText.color = Color.white;
-
-        iconObject.SetActive(false);
+        ShowNotice(draggingRotated ? "Rotated" : "Rotation reset");
+        BuildDragPreview();
     }
 
     private void UpdateDragIconPosition()
     {
-        if (dragIconRect == null || canvasRect == null)
+        if (dragIconRect == null)
         {
             return;
         }
 
-        Camera uiCamera = rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay
-            ? null
-            : rootCanvas.worldCamera;
+        RectTransform parentRect = dragIconRect.parent as RectTransform;
 
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            canvasRect,
+        if (parentRect == null)
+        {
+            return;
+        }
+
+        Camera uiCamera = null;
+
+        if (rootCanvas != null && rootCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
+        {
+            uiCamera = rootCanvas.worldCamera;
+        }
+
+        bool success = RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            parentRect,
             Input.mousePosition,
             uiCamera,
             out Vector2 localPoint
         );
+
+        if (!success)
+        {
+            return;
+        }
 
         dragIconRect.anchoredPosition = localPoint;
     }
