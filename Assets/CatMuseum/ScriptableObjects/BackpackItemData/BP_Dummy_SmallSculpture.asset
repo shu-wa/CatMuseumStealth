@@ -15,8 +15,16 @@ MonoBehaviour:
   itemName: Small Sculpture Dummy
   itemType: 0
   width: 1
-  height: 2
+  height: 1
+  canRotate: 1
   price: 80
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 2d34b4a3f655c6948be4b1436f62ea6c, type: 3}
+  modelPrefab: {fileID: 7158711534596787660, guid: aafec47323eae3d4180ea061c3cdcae6, type: 3}
+  modelLocalPosition: {x: 0, y: 1, z: 0}
+  modelLocalRotationEuler: {x: 0, y: 0, z: 0}
+  modelLocalScale: {x: 0.1, y: 0.1, z: 0.1}
+  spinAxis: {x: 0, y: 1, z: 0}
+  spinSpeed: 30
+  useLocalSpinAxis: 1
   linkedArtData: {fileID: 11400000, guid: 35f35ff2dace43248b16c63669f2ee39, type: 2}
   supportType: 0

@@ -16,7 +16,15 @@ MonoBehaviour:
   itemType: 1
   width: 1
   height: 1
+  canRotate: 0
   price: 120
   icon: {fileID: 0}
+  modelPrefab: {fileID: 0}
+  modelLocalPosition: {x: 0, y: 0, z: 0}
+  modelLocalRotationEuler: {x: 0, y: 0, z: 0}
+  modelLocalScale: {x: 1, y: 1, z: 1}
+  spinAxis: {x: 0, y: 1, z: 0}
+  spinSpeed: 30
+  useLocalSpinAxis: 1
   linkedArtData: {fileID: 0}
   supportType: 2

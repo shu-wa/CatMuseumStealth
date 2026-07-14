@@ -26,6 +26,7 @@ public class ArtPiece : MonoBehaviour, IInteractable
     [Header("guard check")]
     [SerializeField] private float lookHeight = 0.8f;
 
+
     private ArtPieceState state = ArtPieceState.Real;
     private ArtData placedDummyData;
     private bool hasBeenReportedEmpty = false;
@@ -87,6 +88,11 @@ public class ArtPiece : MonoBehaviour, IInteractable
                 {
                     Debug.Log("Not enough capacity");
                     player.ShowNotice("Not enough capacity");
+                    return false;
+                }
+
+                if (!CanPackArtIntoBackpack(player))
+                {
                     return false;
                 }
 
@@ -234,6 +240,11 @@ public class ArtPiece : MonoBehaviour, IInteractable
             return;
         }
 
+        if (!TryPackArtIntoBackpack(player))
+        {
+            return;
+        }
+
         placedDummyData = dummy.data;
 
         bool success = player.Inventory.ReplaceItem(dummy, artData, false);
@@ -252,6 +263,11 @@ public class ArtPiece : MonoBehaviour, IInteractable
 
     private void CompleteSteal(PlayerInteractor player)
     {
+        if (!TryPackArtIntoBackpack(player))
+        {
+            return;
+        }
+
         bool success = player.Inventory.AddItem(artData, false);
 
         if (!success)
@@ -386,5 +402,63 @@ public class ArtPiece : MonoBehaviour, IInteractable
         }
 
         return "";
+    }
+
+    private bool CanPackArtIntoBackpack(PlayerInteractor player)
+    {
+        if (artData == null)
+        {
+            return false;
+        }
+
+        if (PlayerProfile.Instance == null)
+        {
+            player.ShowNotice("PlayerProfile is not found");
+            return false;
+        }
+
+        if (!PlayerProfile.Instance.BackpackEquipped)
+        {
+            player.ShowNotice("Backpack is not equipped");
+            return false;
+        }
+
+        if (!PlayerProfile.Instance.CanAutoPackArt(artData, true))
+        {
+            player.ShowNotice("Backpack is full");
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool TryPackArtIntoBackpack(PlayerInteractor player)
+    {
+        if (artData == null)
+        {
+            return false;
+        }
+
+        if (PlayerProfile.Instance == null)
+        {
+            player.ShowNotice("PlayerProfile is not found");
+            return false;
+        }
+
+        bool success = PlayerProfile.Instance.TryAutoPackArt(
+            artData,
+            out int placedX,
+            out int placedY,
+            true
+        );
+
+        if (!success)
+        {
+            player.ShowNotice("Backpack is full");
+            return false;
+        }
+
+        player.ShowNotice($"Packed: {artData.artName}");
+        return true;
     }
 }

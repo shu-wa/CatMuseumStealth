@@ -3,7 +3,8 @@ using UnityEngine;
 public enum BackpackItemType
 {
     Dummy,
-    Support
+    Support,
+    Loot
 }
 
 public enum SupportItemType
@@ -14,6 +15,9 @@ public enum SupportItemType
 }
 
 [CreateAssetMenu(fileName = "NewBackpackItemData", menuName = "CatMuseum/Backpack Item Data")]
+
+
+
 public class BackpackItemData : ScriptableObject
 {
     [Header("information")]
@@ -33,11 +37,24 @@ public class BackpackItemData : ScriptableObject
     [Header("visual")]
     public Sprite icon;
 
+    [Header("3d model")]
+    public GameObject modelPrefab;
+    public Vector3 modelLocalPosition = Vector3.zero;
+    public Vector3 modelLocalRotationEuler = Vector3.zero;
+    public Vector3 modelLocalScale = Vector3.one;
+
+    [Header("3d spin")]
+    public Vector3 spinAxis = Vector3.up;
+    public float spinSpeed = 30f;
+    public bool useLocalSpinAxis = true;
+
     [Header("dummy item")]
     public ArtData linkedArtData;
 
     [Header("support item")]
     public SupportItemType supportType = SupportItemType.None;
+
+
 
     public int Area => width * height;
 
@@ -49,5 +66,36 @@ public class BackpackItemData : ScriptableObject
     public int GetHeight(bool rotated)
     {
         return rotated ? width : height;
+    }
+
+    public static BackpackItemData CreateRuntimeLootFromArt(ArtData artData)
+    {
+        if (artData == null)
+        {
+            return null;
+        }
+
+        BackpackItemData itemData = ScriptableObject.CreateInstance<BackpackItemData>();
+
+        itemData.itemName = "Stolen " + artData.artName;
+        itemData.itemType = BackpackItemType.Loot;
+
+        itemData.width = artData.backpackWidth;
+        itemData.height = artData.backpackHeight;
+        itemData.canRotate = artData.backpackCanRotate;
+
+        itemData.price = 0;
+
+        itemData.icon = artData.backpackIcon;
+        itemData.modelPrefab = artData.backpackModelPrefab;
+        itemData.modelLocalPosition = artData.backpackModelLocalPosition;
+        itemData.modelLocalRotationEuler = artData.backpackModelLocalRotationEuler;
+        itemData.modelLocalScale = artData.backpackModelLocalScale;
+
+        itemData.spinAxis = artData.backpackSpinAxis;
+        itemData.spinSpeed = artData.backpackSpinSpeed;
+        itemData.useLocalSpinAxis = artData.backpackUseLocalSpinAxis;
+
+        return itemData;
     }
 }

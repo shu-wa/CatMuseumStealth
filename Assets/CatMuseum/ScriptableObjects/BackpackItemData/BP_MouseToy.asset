@@ -16,6 +16,7 @@ MonoBehaviour:
   itemType: 1
   width: 1
   height: 1
+  canRotate: 0
   price: 80
   icon: {fileID: 0}
   linkedArtData: {fileID: 0}

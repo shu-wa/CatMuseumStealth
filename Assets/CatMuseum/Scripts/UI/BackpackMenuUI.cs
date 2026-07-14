@@ -33,6 +33,12 @@ public class BackpackMenuUI : MonoBehaviour
     [SerializeField] private Button backpackButton;
     [SerializeField] private TextMeshProUGUI backpackButtonText;
 
+    [Header("item detail")]
+    [SerializeField] private GameObject itemDetailRoot;
+    [SerializeField] private Image itemDetailIcon;
+    [SerializeField] private TextMeshProUGUI itemDetailNameText;
+    [SerializeField] private TextMeshProUGUI itemDetailInfoText;
+
     [Header("dragIcon")]
     [SerializeField] private RectTransform dragIconRect;
     [SerializeField] private RectTransform dragPreviewRoot;
@@ -47,6 +53,22 @@ public class BackpackMenuUI : MonoBehaviour
     [SerializeField] private Color dragPreviewValidColor = new Color(0.2f, 1f, 0.35f, 0.45f);
     [SerializeField] private Color dragPreviewInvalidColor = new Color(1f, 0.2f, 0.2f, 0.45f);
 
+    [Header("3d board")]
+    [SerializeField] private Backpack3DBoard backpack3DBoard;
+    [SerializeField] private bool use3DBoard = true;
+    [SerializeField] private float dragStartDistance = 8f;
+
+    [Header("mode")]
+    [SerializeField] private bool allowBuying = true;
+    [SerializeField] private bool allowBackpackToggle = true;
+    [SerializeField] private bool allowItemRemoval = true;
+    [SerializeField] private bool showItemLists = true;
+
+    [SerializeField] private GameObject supportListPanelObject;
+    [SerializeField] private GameObject dummyListPanelObject;
+    [SerializeField] private GameObject backpackButtonObject;
+
+    public bool IsOpen => isOpen;
 
 
 
@@ -54,6 +76,8 @@ public class BackpackMenuUI : MonoBehaviour
     private readonly List<GameObject> dragPreviewCells = new List<GameObject>();
 
     private PackedBackpackItem draggingPackedItem;
+    private PackedBackpackItem pressedPackedItem;
+    private Vector3 pressMousePosition;
     private bool isMovingPackedItem = false;
     public static bool IsAnyBackpackOpen { get; private set; }
 
@@ -102,6 +126,14 @@ public class BackpackMenuUI : MonoBehaviour
         {
             panelRoot.SetActive(false);
         }
+
+        EnsureItemDetailUI();
+
+        if (itemDetailRoot != null)
+        {
+            itemDetailRoot.SetActive(false);
+        }
+
         if (dragIconImage != null)
         {
             dragIconImage.raycastTarget = false;
@@ -120,6 +152,13 @@ public class BackpackMenuUI : MonoBehaviour
             canvasGroup.interactable = false;
             dragIconRect.gameObject.SetActive(false);
         }
+
+        if (use3DBoard && backpack3DBoard != null)
+        {
+            backpack3DBoard.SetBoardVisible(false);
+        }
+
+        ApplyModeSettings();
     }
 
     private void Update()
@@ -135,6 +174,12 @@ public class BackpackMenuUI : MonoBehaviour
             return;
         }
 
+        if (!isDragging)
+        {
+            TryRemove3DItem();
+            UpdatePressed3DItem();
+        }
+
         if (isDragging)
         {
             if (Input.GetKeyDown(KeyCode.R))
@@ -144,6 +189,33 @@ public class BackpackMenuUI : MonoBehaviour
 
             UpdateDragIconPosition();
             UpdateDragPreviewColor();
+
+            if (use3DBoard && backpack3DBoard != null)
+            {
+                backpack3DBoard.UpdateDragPreview(
+                    draggingItem,
+                    draggingRotated,
+                    isMovingPackedItem,
+                    draggingPackedItem
+                );
+            }
+
+            if (Input.GetMouseButtonUp(0))
+            {
+                EndDragItem();
+            }
+        }
+    }
+
+    public void ToggleOpen()
+    {
+        if (isOpen)
+        {
+            Close();
+        }
+        else
+        {
+            Open();
         }
     }
 
@@ -160,6 +232,12 @@ public class BackpackMenuUI : MonoBehaviour
             panelRoot.SetActive(true);
         }
 
+        if (use3DBoard && backpack3DBoard != null)
+        {
+            backpack3DBoard.SetBoardVisible(true);
+            backpack3DBoard.RefreshFromProfile();
+        }
+
         EnsureGridGenerated();
         RefreshAll();
     }
@@ -171,6 +249,11 @@ public class BackpackMenuUI : MonoBehaviour
 
         CancelDrag();
 
+        if (use3DBoard && backpack3DBoard != null)
+        {
+            backpack3DBoard.SetBoardVisible(false);
+        }
+
         if (panelRoot != null)
         {
             panelRoot.SetActive(false);
@@ -178,6 +261,50 @@ public class BackpackMenuUI : MonoBehaviour
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+    }
+
+    private void UpdatePressed3DItem()
+    {
+        if (!use3DBoard || backpack3DBoard == null)
+        {
+            return;
+        }
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            if (!backpack3DBoard.TryGetPackedItemFromMouse(out PackedBackpackItem packedItem))
+            {
+                return;
+            }
+
+            pressedPackedItem = packedItem;
+            pressMousePosition = Input.mousePosition;
+            ShowPackedItemDetails(packedItem);
+            return;
+        }
+
+        if (pressedPackedItem == null)
+        {
+            return;
+        }
+
+        if (Input.GetMouseButton(0))
+        {
+            float dragDistance = Vector3.Distance(pressMousePosition, Input.mousePosition);
+
+            if (dragDistance >= dragStartDistance)
+            {
+                BeginMovePackedItem(pressedPackedItem);
+                pressedPackedItem = null;
+            }
+
+            return;
+        }
+
+        if (Input.GetMouseButtonUp(0))
+        {
+            pressedPackedItem = null;
+        }
     }
     private void UpdateDragPreviewIcon()
     {
@@ -209,6 +336,13 @@ public class BackpackMenuUI : MonoBehaviour
 
     public void ToggleBackpack()
     {
+
+        if (!allowBackpackToggle)
+        {
+            ShowNotice("Cannot remove backpack during mission");
+            return;
+        }
+
         if (PlayerProfile.Instance == null)
         {
             ShowNotice("PlayerProfile is not found");
@@ -231,6 +365,13 @@ public class BackpackMenuUI : MonoBehaviour
 
     public void BuyItem(BackpackItemData itemData)
     {
+
+        if (!allowBuying)
+        {
+            ShowNotice("Cannot buy items during mission");
+            return;
+        }
+
         if (PlayerProfile.Instance == null)
         {
             ShowNotice("PlayerProfile is not found");
@@ -369,6 +510,7 @@ public class BackpackMenuUI : MonoBehaviour
         }
 
         dragPreviewCells.Clear();
+        dragPreviewImages.Clear();
     }
 
     public void BeginMovePackedItem(PackedBackpackItem packedItem)
@@ -383,6 +525,11 @@ public class BackpackMenuUI : MonoBehaviour
         draggingRotated = packedItem.rotated;
         isDragging = true;
         isMovingPackedItem = true;
+
+        if (use3DBoard && backpack3DBoard != null)
+        {
+            backpack3DBoard.SetPackedItemVisible(packedItem, false);
+        }
 
         BuildDragPreview();
 
@@ -403,6 +550,86 @@ public class BackpackMenuUI : MonoBehaviour
 
         ShowNotice("Move item / R: Rotate");
         UpdateDragIconPosition();
+    }
+
+    private void ShowPackedItemDetails(PackedBackpackItem packedItem)
+    {
+        if (packedItem == null || packedItem.itemData == null)
+        {
+            return;
+        }
+
+        BackpackItemData itemData = packedItem.itemData;
+
+        if (itemDetailRoot != null)
+        {
+            itemDetailRoot.SetActive(true);
+        }
+
+        if (itemDetailIcon != null)
+        {
+            itemDetailIcon.sprite = itemData.icon;
+            itemDetailIcon.enabled = itemData.icon != null;
+        }
+
+        if (itemDetailNameText != null)
+        {
+            itemDetailNameText.text = itemData.itemName;
+        }
+
+        if (itemDetailInfoText != null)
+        {
+            itemDetailInfoText.text = BuildItemDetailText(packedItem);
+        }
+
+        ShowNotice("Item selected");
+    }
+
+    private string BuildItemDetailText(PackedBackpackItem packedItem)
+    {
+        BackpackItemData itemData = packedItem.itemData;
+
+        string typeText = itemData.itemType.ToString();
+        string rotateText = packedItem.rotated ? "Yes" : "No";
+        int width = itemData.GetWidth(packedItem.rotated);
+        int height = itemData.GetHeight(packedItem.rotated);
+
+        string detail =
+            $"Type: {typeText}\n" +
+            $"Size: {width} x {height}\n" +
+            $"Cells: {itemData.Area}\n" +
+            $"Position: ({packedItem.gridX}, {packedItem.gridY})\n" +
+            $"Rotated: {rotateText}";
+
+        if (itemData.itemType == BackpackItemType.Dummy && itemData.linkedArtData != null)
+        {
+            detail += $"\nTarget: {itemData.linkedArtData.size} {itemData.linkedArtData.category}";
+        }
+
+        if (itemData.itemType == BackpackItemType.Support)
+        {
+            detail += $"\nEffect: {GetSupportItemDescription(itemData.supportType)}";
+        }
+
+        if (itemData.itemType == BackpackItemType.Loot)
+        {
+            detail += "\nLoot: Stolen museum item";
+        }
+
+        return detail;
+    }
+
+    private string GetSupportItemDescription(SupportItemType supportType)
+    {
+        switch (supportType)
+        {
+            case SupportItemType.MouseToy:
+                return "Distracts guards during a check";
+            case SupportItemType.SmokeBomb:
+                return "Helps break line of sight";
+            default:
+                return "Support item";
+        }
     }
 
     public bool BeginDragItem(BackpackItemData itemData)
@@ -476,7 +703,26 @@ public class BackpackMenuUI : MonoBehaviour
             return;
         }
 
-        if (!TryGetGridPositionFromMouse(out int gridX, out int gridY))
+        bool hasGridPosition = false;
+        int gridX = -1;
+        int gridY = -1;
+
+        if (use3DBoard && backpack3DBoard != null)
+        {
+            hasGridPosition = backpack3DBoard.TryGetGridPositionFromMouse(
+                draggingItem,
+                draggingRotated,
+                out gridX,
+                out gridY
+            );
+        }
+
+        if (!hasGridPosition)
+        {
+            hasGridPosition = TryGetGridPositionFromMouse(out gridX, out gridY);
+        }
+
+        if (!hasGridPosition)
         {
             ShowNotice("Drop item on backpack grid");
             CancelDrag();
@@ -517,10 +763,17 @@ public class BackpackMenuUI : MonoBehaviour
         RefreshAll();
     }
 
+
     public void CancelDrag()
     {
+        if (isMovingPackedItem && draggingPackedItem != null && use3DBoard && backpack3DBoard != null)
+        {
+            backpack3DBoard.SetPackedItemVisible(draggingPackedItem, true);
+        }
+
         draggingItem = null;
         draggingPackedItem = null;
+        pressedPackedItem = null;
         isDragging = false;
         isMovingPackedItem = false;
         draggingRotated = false;
@@ -528,14 +781,14 @@ public class BackpackMenuUI : MonoBehaviour
 
         ClearDragPreview();
 
+        if (use3DBoard && backpack3DBoard != null)
+        {
+            backpack3DBoard.ClearPreview();
+        }
+
         if (dragIconRect != null)
         {
             dragIconRect.gameObject.SetActive(false);
-            dragPreviewImages.Clear();
-        }
-        if (dragPreviewIconImage != null)
-        {
-            dragPreviewIconImage.enabled = false;
         }
     }
 
@@ -554,6 +807,12 @@ public class BackpackMenuUI : MonoBehaviour
 
     public void RemovePackedItem(PackedBackpackItem packedItem)
     {
+        if (!allowItemRemoval)
+        {
+            ShowNotice("Cannot discard items during mission");
+            return;
+        }
+
         if (PlayerProfile.Instance == null)
         {
             return;
@@ -595,6 +854,11 @@ public class BackpackMenuUI : MonoBehaviour
         RefreshStatus();
         RefreshLists();
         RefreshPackedItems();
+
+        if (use3DBoard && backpack3DBoard != null)
+        {
+            backpack3DBoard.RefreshFromProfile();
+        }
     }
 
     private void RefreshStatus()
@@ -922,6 +1186,97 @@ public class BackpackMenuUI : MonoBehaviour
         MenuNoticeUI.Instance?.ShowNotice(message);
     }
 
+    private void EnsureItemDetailUI()
+    {
+        if (itemDetailRoot != null || panelRoot == null)
+        {
+            return;
+        }
+
+        GameObject detailObject = new GameObject("ItemDetailPanel", typeof(RectTransform), typeof(Image));
+        detailObject.transform.SetParent(panelRoot.transform, false);
+
+        RectTransform detailRect = detailObject.GetComponent<RectTransform>();
+        detailRect.anchorMin = new Vector2(1f, 0.5f);
+        detailRect.anchorMax = new Vector2(1f, 0.5f);
+        detailRect.pivot = new Vector2(1f, 0.5f);
+        detailRect.sizeDelta = new Vector2(240f, 280f);
+        detailRect.anchoredPosition = new Vector2(-24f, 0f);
+
+        Image detailBackground = detailObject.GetComponent<Image>();
+        detailBackground.color = new Color(0.06f, 0.06f, 0.06f, 0.82f);
+
+        itemDetailRoot = detailObject;
+
+        GameObject iconObject = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+        iconObject.transform.SetParent(detailObject.transform, false);
+
+        RectTransform iconRect = iconObject.GetComponent<RectTransform>();
+        iconRect.anchorMin = new Vector2(0.5f, 1f);
+        iconRect.anchorMax = new Vector2(0.5f, 1f);
+        iconRect.pivot = new Vector2(0.5f, 1f);
+        iconRect.sizeDelta = new Vector2(72f, 72f);
+        iconRect.anchoredPosition = new Vector2(0f, -20f);
+
+        itemDetailIcon = iconObject.GetComponent<Image>();
+        itemDetailIcon.preserveAspect = true;
+
+        itemDetailNameText = CreateDetailText(
+            detailObject.transform,
+            "NameText",
+            new Vector2(0.5f, 1f),
+            new Vector2(0.5f, 1f),
+            new Vector2(0.5f, 1f),
+            new Vector2(200f, 38f),
+            new Vector2(0f, -100f),
+            18f,
+            TextAlignmentOptions.Center
+        );
+
+        itemDetailInfoText = CreateDetailText(
+            detailObject.transform,
+            "InfoText",
+            new Vector2(0f, 1f),
+            new Vector2(1f, 1f),
+            new Vector2(0.5f, 1f),
+            new Vector2(-32f, 130f),
+            new Vector2(0f, -148f),
+            14f,
+            TextAlignmentOptions.TopLeft
+        );
+    }
+
+    private TextMeshProUGUI CreateDetailText(
+        Transform parent,
+        string objectName,
+        Vector2 anchorMin,
+        Vector2 anchorMax,
+        Vector2 pivot,
+        Vector2 sizeDelta,
+        Vector2 anchoredPosition,
+        float fontSize,
+        TextAlignmentOptions alignment
+    )
+    {
+        GameObject textObject = new GameObject(objectName, typeof(RectTransform), typeof(TextMeshProUGUI));
+        textObject.transform.SetParent(parent, false);
+
+        RectTransform rectTransform = textObject.GetComponent<RectTransform>();
+        rectTransform.anchorMin = anchorMin;
+        rectTransform.anchorMax = anchorMax;
+        rectTransform.pivot = pivot;
+        rectTransform.sizeDelta = sizeDelta;
+        rectTransform.anchoredPosition = anchoredPosition;
+
+        TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
+        text.fontSize = fontSize;
+        text.color = Color.white;
+        text.alignment = alignment;
+        text.raycastTarget = false;
+
+        return text;
+    }
+
     private void ClearChildren(RectTransform root)
     {
         if (root == null)
@@ -932,6 +1287,49 @@ public class BackpackMenuUI : MonoBehaviour
         for (int i = root.childCount - 1; i >= 0; i--)
         {
             Destroy(root.GetChild(i).gameObject);
+        }
+    }
+
+    private void TryRemove3DItem()
+    {
+        if (!allowItemRemoval)
+        {
+            return;
+        }
+
+        if (!use3DBoard || backpack3DBoard == null)
+        {
+            return;
+        }
+
+        if (!Input.GetMouseButtonDown(1))
+        {
+            return;
+        }
+
+        if (!backpack3DBoard.TryGetPackedItemFromMouse(out PackedBackpackItem packedItem))
+        {
+            return;
+        }
+
+        RemovePackedItem(packedItem);
+    }
+
+    private void ApplyModeSettings()
+    {
+        if (supportListPanelObject != null)
+        {
+            supportListPanelObject.SetActive(showItemLists);
+        }
+
+        if (dummyListPanelObject != null)
+        {
+            dummyListPanelObject.SetActive(showItemLists);
+        }
+
+        if (backpackButtonObject != null)
+        {
+            backpackButtonObject.SetActive(allowBackpackToggle);
         }
     }
 }

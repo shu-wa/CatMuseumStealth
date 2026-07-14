@@ -26,6 +26,23 @@ public class ArtData : ScriptableObject
     public float suspicionWhenStolen = 30f;
     public float suspicionWhenSwapped = 5f;
 
+    [Header("backpack loot")]
+    [Min(1)] public int backpackWidth = 1;
+    [Min(1)] public int backpackHeight = 1;
+    public bool backpackCanRotate = true;
+
+    [Header("backpack loot visual")]
+    public Sprite backpackIcon;
+    public GameObject backpackModelPrefab;
+    public Vector3 backpackModelLocalPosition = Vector3.zero;
+    public Vector3 backpackModelLocalRotationEuler = Vector3.zero;
+    public Vector3 backpackModelLocalScale = Vector3.one;
+
+    [Header("backpack loot spin")]
+    public Vector3 backpackSpinAxis = Vector3.up;
+    public float backpackSpinSpeed = 30f;
+    public bool backpackUseLocalSpinAxis = true;
+
     public int CapacityCost
     {
         get

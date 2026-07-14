@@ -433,25 +433,7 @@ public class PlayerProfile : MonoBehaviour
     }
     public bool MovePackedItem(PackedBackpackItem packedItem, int newGridX, int newGridY, bool rotated)
     {
-        if (packedItem == null || packedItem.itemData == null)
-        {
-            return false;
-        }
-
-        int oldX = packedItem.gridX;
-        int oldY = packedItem.gridY;
-        bool oldRotated = packedItem.rotated;
-
-        packedItem.gridX = -999;
-        packedItem.gridY = -999;
-
-        bool canPlace = CanPlaceItem(packedItem.itemData, newGridX, newGridY, rotated);
-
-        packedItem.gridX = oldX;
-        packedItem.gridY = oldY;
-        packedItem.rotated = oldRotated;
-
-        if (!canPlace)
+        if (!CanMovePackedItem(packedItem, newGridX, newGridY, rotated))
         {
             return false;
         }
@@ -461,5 +443,123 @@ public class PlayerProfile : MonoBehaviour
         packedItem.rotated = rotated;
 
         return true;
+    }
+
+    public bool CanAutoPackItem(BackpackItemData itemData, bool allowRotate = true)
+    {
+        if (itemData == null)
+        {
+            return false;
+        }
+
+        bool[] rotationOptions;
+
+        if (allowRotate && itemData.canRotate && itemData.width != itemData.height)
+        {
+            rotationOptions = new bool[] { false, true };
+        }
+        else
+        {
+            rotationOptions = new bool[] { false };
+        }
+
+        foreach (bool rotated in rotationOptions)
+        {
+            int itemWidth = itemData.GetWidth(rotated);
+            int itemHeight = itemData.GetHeight(rotated);
+
+            for (int y = 0; y <= backpackHeight - itemHeight; y++)
+            {
+                for (int x = 0; x <= backpackWidth - itemWidth; x++)
+                {
+                    if (CanPlaceItem(itemData, x, y, rotated))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public bool TryAutoPackItem(BackpackItemData itemData, out int placedX, out int placedY, bool allowRotate = true)
+    {
+        placedX = -1;
+        placedY = -1;
+
+        if (itemData == null)
+        {
+            return false;
+        }
+
+        bool[] rotationOptions;
+
+        if (allowRotate && itemData.canRotate && itemData.width != itemData.height)
+        {
+            rotationOptions = new bool[] { false, true };
+        }
+        else
+        {
+            rotationOptions = new bool[] { false };
+        }
+
+        foreach (bool rotated in rotationOptions)
+        {
+            int itemWidth = itemData.GetWidth(rotated);
+            int itemHeight = itemData.GetHeight(rotated);
+
+            for (int y = 0; y <= backpackHeight - itemHeight; y++)
+            {
+                for (int x = 0; x <= backpackWidth - itemWidth; x++)
+                {
+                    if (!CanPlaceItem(itemData, x, y, rotated))
+                    {
+                        continue;
+                    }
+
+                    packedItems.Add(new PackedBackpackItem
+                    {
+                        itemData = itemData,
+                        gridX = x,
+                        gridY = y,
+                        rotated = rotated
+                    });
+
+                    placedX = x;
+                    placedY = y;
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public bool CanAutoPackArt(ArtData artData, bool allowRotate = true)
+    {
+        BackpackItemData runtimeLootItem = BackpackItemData.CreateRuntimeLootFromArt(artData);
+
+        if (runtimeLootItem == null)
+        {
+            return false;
+        }
+
+        return CanAutoPackItem(runtimeLootItem, allowRotate);
+    }
+
+    public bool TryAutoPackArt(ArtData artData, out int placedX, out int placedY, bool allowRotate = true)
+    {
+        placedX = -1;
+        placedY = -1;
+
+        BackpackItemData runtimeLootItem = BackpackItemData.CreateRuntimeLootFromArt(artData);
+
+        if (runtimeLootItem == null)
+        {
+            return false;
+        }
+
+        return TryAutoPackItem(runtimeLootItem, out placedX, out placedY, allowRotate);
     }
 }
