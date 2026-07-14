@@ -32,6 +32,8 @@ public class ArtData : ScriptableObject
     public bool backpackCanRotate = true;
 
     [Header("backpack loot visual")]
+    public string backpackDisplayName;
+    [TextArea(2, 5)] public string backpackInfoText;
     public Sprite backpackIcon;
     public GameObject backpackModelPrefab;
     public Vector3 backpackModelLocalPosition = Vector3.zero;

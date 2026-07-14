@@ -18,3 +18,16 @@ MonoBehaviour:
   value: 300
   suspicionWhenStolen: 35
   suspicionWhenSwapped: 5
+  backpackWidth: 2
+  backpackHeight: 1
+  backpackCanRotate: 1
+  backpackDisplayName: Moon Cat
+  backpackInfoText: Medium stolen painting.
+  backpackIcon: {fileID: 21300000, guid: 2d34b4a3f655c6948be4b1436f62ea6c, type: 3}
+  backpackModelPrefab: {fileID: 4844362093796155725, guid: 2468c1e40d4af4e44a448012dbed5ff3, type: 3}
+  backpackModelLocalPosition: {x: 0, y: 1, z: 0}
+  backpackModelLocalRotationEuler: {x: 0, y: 0, z: 0}
+  backpackModelLocalScale: {x: 0.1, y: 0.1, z: 0.1}
+  backpackSpinAxis: {x: 0, y: 1, z: 0}
+  backpackSpinSpeed: 30
+  backpackUseLocalSpinAxis: 1

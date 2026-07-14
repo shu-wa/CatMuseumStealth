@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemName: Small Sculpture Dummy
   itemType: 0
+  displayName: Small Sculpture Dummy
+  infoText: A dummy used to replace a small sculpture.
   width: 1
   height: 1
   canRotate: 1

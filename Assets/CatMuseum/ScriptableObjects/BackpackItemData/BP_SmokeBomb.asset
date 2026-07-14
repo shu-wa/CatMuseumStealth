@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemName: Smoke Bomb
   itemType: 1
+  displayName: Smoke Bomb
+  infoText: Helps break line of sight during a chase.
   width: 1
   height: 1
   canRotate: 0

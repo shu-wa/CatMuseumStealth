@@ -23,6 +23,8 @@ public class BackpackItemData : ScriptableObject
     [Header("information")]
     public string itemName;
     public BackpackItemType itemType;
+    public string displayName;
+    [TextArea(2, 5)] public string infoText;
 
     [Header("grid size")]
     [Min(1)] public int width = 1;
@@ -77,7 +79,13 @@ public class BackpackItemData : ScriptableObject
 
         BackpackItemData itemData = ScriptableObject.CreateInstance<BackpackItemData>();
 
-        itemData.itemName = "Stolen " + artData.artName;
+        string displayName = string.IsNullOrEmpty(artData.backpackDisplayName)
+            ? artData.artName
+            : artData.backpackDisplayName;
+
+        itemData.itemName = displayName;
+        itemData.displayName = displayName;
+        itemData.infoText = artData.backpackInfoText;
         itemData.itemType = BackpackItemType.Loot;
 
         itemData.width = artData.backpackWidth;
@@ -95,6 +103,7 @@ public class BackpackItemData : ScriptableObject
         itemData.spinAxis = artData.backpackSpinAxis;
         itemData.spinSpeed = artData.backpackSpinSpeed;
         itemData.useLocalSpinAxis = artData.backpackUseLocalSpinAxis;
+        itemData.linkedArtData = artData;
 
         return itemData;
     }

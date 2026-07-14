@@ -574,7 +574,7 @@ public class BackpackMenuUI : MonoBehaviour
 
         if (itemDetailNameText != null)
         {
-            itemDetailNameText.text = itemData.itemName;
+            itemDetailNameText.text = GetItemDisplayName(itemData);
         }
 
         if (itemDetailInfoText != null)
@@ -588,48 +588,33 @@ public class BackpackMenuUI : MonoBehaviour
     private string BuildItemDetailText(PackedBackpackItem packedItem)
     {
         BackpackItemData itemData = packedItem.itemData;
+        ArtData linkedArtData = itemData.linkedArtData;
 
-        string typeText = itemData.itemType.ToString();
-        string rotateText = packedItem.rotated ? "Yes" : "No";
         int width = itemData.GetWidth(packedItem.rotated);
         int height = itemData.GetHeight(packedItem.rotated);
+        string categoryText = linkedArtData != null ? linkedArtData.category.ToString() : "-";
+        string sizeText = linkedArtData != null ? linkedArtData.size.ToString() : "-";
+        string infoText = string.IsNullOrEmpty(itemData.infoText) ? "No details" : itemData.infoText;
 
         string detail =
-            $"Type: {typeText}\n" +
-            $"Size: {width} x {height}\n" +
-            $"Cells: {itemData.Area}\n" +
-            $"Position: ({packedItem.gridX}, {packedItem.gridY})\n" +
-            $"Rotated: {rotateText}";
-
-        if (itemData.itemType == BackpackItemType.Dummy && itemData.linkedArtData != null)
-        {
-            detail += $"\nTarget: {itemData.linkedArtData.size} {itemData.linkedArtData.category}";
-        }
-
-        if (itemData.itemType == BackpackItemType.Support)
-        {
-            detail += $"\nEffect: {GetSupportItemDescription(itemData.supportType)}";
-        }
-
-        if (itemData.itemType == BackpackItemType.Loot)
-        {
-            detail += "\nLoot: Stolen museum item";
-        }
+            $"Grid: {width} x {height} ({itemData.Area})\n" +
+            $"Category: {categoryText}\n" +
+            $"Size: {sizeText}\n" +
+            infoText;
 
         return detail;
     }
 
-    private string GetSupportItemDescription(SupportItemType supportType)
+    private string GetItemDisplayName(BackpackItemData itemData)
     {
-        switch (supportType)
+        if (itemData == null)
         {
-            case SupportItemType.MouseToy:
-                return "Distracts guards during a check";
-            case SupportItemType.SmokeBomb:
-                return "Helps break line of sight";
-            default:
-                return "Support item";
+            return "";
         }
+
+        return string.IsNullOrEmpty(itemData.displayName)
+            ? itemData.itemName
+            : itemData.displayName;
     }
 
     public bool BeginDragItem(BackpackItemData itemData)
@@ -1197,11 +1182,11 @@ public class BackpackMenuUI : MonoBehaviour
         detailObject.transform.SetParent(panelRoot.transform, false);
 
         RectTransform detailRect = detailObject.GetComponent<RectTransform>();
-        detailRect.anchorMin = new Vector2(1f, 0.5f);
-        detailRect.anchorMax = new Vector2(1f, 0.5f);
-        detailRect.pivot = new Vector2(1f, 0.5f);
-        detailRect.sizeDelta = new Vector2(240f, 280f);
-        detailRect.anchoredPosition = new Vector2(-24f, 0f);
+        detailRect.anchorMin = new Vector2(0.5f, 1f);
+        detailRect.anchorMax = new Vector2(0.5f, 1f);
+        detailRect.pivot = new Vector2(0.5f, 1f);
+        detailRect.sizeDelta = new Vector2(520f, 132f);
+        detailRect.anchoredPosition = new Vector2(0f, -18f);
 
         Image detailBackground = detailObject.GetComponent<Image>();
         detailBackground.color = new Color(0.06f, 0.06f, 0.06f, 0.82f);
@@ -1212,11 +1197,11 @@ public class BackpackMenuUI : MonoBehaviour
         iconObject.transform.SetParent(detailObject.transform, false);
 
         RectTransform iconRect = iconObject.GetComponent<RectTransform>();
-        iconRect.anchorMin = new Vector2(0.5f, 1f);
-        iconRect.anchorMax = new Vector2(0.5f, 1f);
-        iconRect.pivot = new Vector2(0.5f, 1f);
-        iconRect.sizeDelta = new Vector2(72f, 72f);
-        iconRect.anchoredPosition = new Vector2(0f, -20f);
+        iconRect.anchorMin = new Vector2(0f, 0.5f);
+        iconRect.anchorMax = new Vector2(0f, 0.5f);
+        iconRect.pivot = new Vector2(0f, 0.5f);
+        iconRect.sizeDelta = new Vector2(82f, 82f);
+        iconRect.anchoredPosition = new Vector2(18f, 0f);
 
         itemDetailIcon = iconObject.GetComponent<Image>();
         itemDetailIcon.preserveAspect = true;
@@ -1224,13 +1209,13 @@ public class BackpackMenuUI : MonoBehaviour
         itemDetailNameText = CreateDetailText(
             detailObject.transform,
             "NameText",
+            new Vector2(0f, 1f),
+            new Vector2(1f, 1f),
             new Vector2(0.5f, 1f),
-            new Vector2(0.5f, 1f),
-            new Vector2(0.5f, 1f),
-            new Vector2(200f, 38f),
-            new Vector2(0f, -100f),
+            new Vector2(-128f, 32f),
+            new Vector2(54f, -12f),
             18f,
-            TextAlignmentOptions.Center
+            TextAlignmentOptions.TopLeft
         );
 
         itemDetailInfoText = CreateDetailText(
@@ -1239,8 +1224,8 @@ public class BackpackMenuUI : MonoBehaviour
             new Vector2(0f, 1f),
             new Vector2(1f, 1f),
             new Vector2(0.5f, 1f),
-            new Vector2(-32f, 130f),
-            new Vector2(0f, -148f),
+            new Vector2(-128f, 82f),
+            new Vector2(54f, -48f),
             14f,
             TextAlignmentOptions.TopLeft
         );

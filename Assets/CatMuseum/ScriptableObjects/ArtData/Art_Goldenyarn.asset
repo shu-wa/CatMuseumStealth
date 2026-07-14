@@ -18,3 +18,16 @@ MonoBehaviour:
   value: 180
   suspicionWhenStolen: 25
   suspicionWhenSwapped: 4
+  backpackWidth: 1
+  backpackHeight: 2
+  backpackCanRotate: 1
+  backpackDisplayName: Golden Yarn
+  backpackInfoText: Small stolen sculpture.
+  backpackIcon: {fileID: 21300000, guid: 2d34b4a3f655c6948be4b1436f62ea6c, type: 3}
+  backpackModelPrefab: {fileID: 7158711534596787660, guid: 03f2ecf536fc0bf4484fd9874d3d5596, type: 3}
+  backpackModelLocalPosition: {x: 0, y: 1, z: 0}
+  backpackModelLocalRotationEuler: {x: 0, y: 0, z: 0}
+  backpackModelLocalScale: {x: 0.1, y: 0.1, z: 0.1}
+  backpackSpinAxis: {x: 0, y: 1, z: 0}
+  backpackSpinSpeed: 30
+  backpackUseLocalSpinAxis: 1

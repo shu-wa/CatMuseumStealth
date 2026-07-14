@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemName: Mouse Toy
   itemType: 1
+  displayName: Mouse Toy
+  infoText: Distracts guards during a bag check.
   width: 1
   height: 1
   canRotate: 0

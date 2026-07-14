@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemName: Large Painting Dummy
   itemType: 0
+  displayName: Large Painting Dummy
+  infoText: A dummy used to replace a large painting.
   width: 3
   height: 1
   canRotate: 1

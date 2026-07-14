@@ -18,3 +18,16 @@ MonoBehaviour:
   value: 700
   suspicionWhenStolen: 65
   suspicionWhenSwapped: 10
+  backpackWidth: 2
+  backpackHeight: 3
+  backpackCanRotate: 1
+  backpackDisplayName: Big Cat Statue
+  backpackInfoText: Large stolen sculpture.
+  backpackIcon: {fileID: 21300000, guid: 2d34b4a3f655c6948be4b1436f62ea6c, type: 3}
+  backpackModelPrefab: {fileID: 645988232171140580, guid: ec3fbcd0f2139504580e3299f3bc46a2, type: 3}
+  backpackModelLocalPosition: {x: 0, y: 1, z: 0}
+  backpackModelLocalRotationEuler: {x: 0, y: 0, z: 0}
+  backpackModelLocalScale: {x: 0.1, y: 0.1, z: 0.1}
+  backpackSpinAxis: {x: 0, y: 1, z: 0}
+  backpackSpinSpeed: 30
+  backpackUseLocalSpinAxis: 1

@@ -18,3 +18,16 @@ MonoBehaviour:
   value: 120
   suspicionWhenStolen: 20
   suspicionWhenSwapped: 3
+  backpackWidth: 1
+  backpackHeight: 1
+  backpackCanRotate: 1
+  backpackDisplayName: Tiny Fish
+  backpackInfoText: Small stolen painting.
+  backpackIcon: {fileID: 21300000, guid: 2d34b4a3f655c6948be4b1436f62ea6c, type: 3}
+  backpackModelPrefab: {fileID: 3375723540771924768, guid: 34c2907323e607447b8bafef1ebf628c, type: 3}
+  backpackModelLocalPosition: {x: 0, y: 1, z: 0}
+  backpackModelLocalRotationEuler: {x: 0, y: 0, z: 0}
+  backpackModelLocalScale: {x: 0.1, y: 0.1, z: 0.1}
+  backpackSpinAxis: {x: 0, y: 1, z: 0}
+  backpackSpinSpeed: 30
+  backpackUseLocalSpinAxis: 1
