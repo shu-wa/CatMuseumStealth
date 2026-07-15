@@ -240,8 +240,21 @@ public class ArtPiece : MonoBehaviour, IInteractable
             return;
         }
 
+        if (PlayerProfile.Instance == null)
+        {
+            player.ShowNotice("PlayerProfile is not found");
+            return;
+        }
+
+        if (!PlayerProfile.Instance.TryConsumePackedDummyForArt(artData, out PackedBackpackItem consumedPackedDummy))
+        {
+            player.ShowNotice("Packed dummy is not found");
+            return;
+        }
+
         if (!TryPackArtIntoBackpack(player))
         {
+            PlayerProfile.Instance.RestorePackedItem(consumedPackedDummy);
             return;
         }
 
@@ -252,6 +265,8 @@ public class ArtPiece : MonoBehaviour, IInteractable
         if (!success)
         {
             placedDummyData = null;
+            PlayerProfile.Instance.RemoveLatestLootForArt(artData);
+            PlayerProfile.Instance.RestorePackedItem(consumedPackedDummy);
             return;
         }
 
@@ -272,6 +287,11 @@ public class ArtPiece : MonoBehaviour, IInteractable
 
         if (!success)
         {
+            if (PlayerProfile.Instance != null)
+            {
+                PlayerProfile.Instance.RemoveLatestLootForArt(artData);
+            }
+
             return;
         }
 

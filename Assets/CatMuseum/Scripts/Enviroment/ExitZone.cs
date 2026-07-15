@@ -53,6 +53,7 @@ public class ExitZone : MonoBehaviour
         if (PlayerProfile.Instance != null)
         {
             PlayerProfile.Instance.AddMoney(inventory.TotalStolenValue);
+            PlayerProfile.Instance.RemoveSoldLootItemsFromBackpack();
         }
 
         if (GameManager.Instance != null)

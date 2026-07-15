@@ -266,6 +266,122 @@ public class PlayerProfile : MonoBehaviour
         return true;
     }
 
+    public void RestorePackedItem(PackedBackpackItem packedItem)
+    {
+        if (packedItem == null || packedItem.itemData == null)
+        {
+            return;
+        }
+
+        if (packedItems.Contains(packedItem))
+        {
+            return;
+        }
+
+        packedItems.Add(packedItem);
+    }
+
+    public bool TryConsumePackedDummyForArt(ArtData targetArt, out PackedBackpackItem consumedItem)
+    {
+        consumedItem = null;
+
+        if (targetArt == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < packedItems.Count; i++)
+        {
+            PackedBackpackItem packedItem = packedItems[i];
+
+            if (packedItem == null || packedItem.itemData == null)
+            {
+                continue;
+            }
+
+            BackpackItemData itemData = packedItem.itemData;
+
+            if (itemData.itemType != BackpackItemType.Dummy)
+            {
+                continue;
+            }
+
+            if (!IsDummyMatchingArt(itemData, targetArt))
+            {
+                continue;
+            }
+
+            consumedItem = packedItem;
+            packedItems.RemoveAt(i);
+            Debug.Log("Consumed packed dummy: " + itemData.itemName);
+            return true;
+        }
+
+        return false;
+    }
+
+    public bool RemoveLatestLootForArt(ArtData artData)
+    {
+        if (artData == null)
+        {
+            return false;
+        }
+
+        for (int i = packedItems.Count - 1; i >= 0; i--)
+        {
+            PackedBackpackItem packedItem = packedItems[i];
+
+            if (packedItem == null || packedItem.itemData == null)
+            {
+                continue;
+            }
+
+            BackpackItemData itemData = packedItem.itemData;
+
+            if (itemData.itemType != BackpackItemType.Loot)
+            {
+                continue;
+            }
+
+            if (itemData.linkedArtData != artData)
+            {
+                continue;
+            }
+
+            packedItems.RemoveAt(i);
+            Debug.Log("Removed loot from backpack: " + itemData.itemName);
+            return true;
+        }
+
+        return false;
+    }
+
+    public int RemoveSoldLootItemsFromBackpack()
+    {
+        int removedCount = 0;
+
+        for (int i = packedItems.Count - 1; i >= 0; i--)
+        {
+            PackedBackpackItem packedItem = packedItems[i];
+
+            if (packedItem == null || packedItem.itemData == null)
+            {
+                continue;
+            }
+
+            if (packedItem.itemData.itemType != BackpackItemType.Loot)
+            {
+                continue;
+            }
+
+            Debug.Log("Sold loot removed from backpack: " + packedItem.itemData.itemName);
+            packedItems.RemoveAt(i);
+            removedCount++;
+        }
+
+        return removedCount;
+    }
+
     public bool CanPlaceItem(BackpackItemData itemData, int gridX, int gridY, bool rotated)
     {
         if (itemData == null)
@@ -407,6 +523,20 @@ public class PlayerProfile : MonoBehaviour
         }
 
         return null;
+    }
+
+    private bool IsDummyMatchingArt(BackpackItemData dummyItem, ArtData targetArt)
+    {
+        if (dummyItem == null || dummyItem.linkedArtData == null || targetArt == null)
+        {
+            return false;
+        }
+
+        ArtData dummyArtData = dummyItem.linkedArtData;
+
+        return
+            dummyArtData.category == targetArt.category &&
+            dummyArtData.size == targetArt.size;
     }
 
     public bool CanMovePackedItem(PackedBackpackItem packedItem, int newGridX, int newGridY, bool rotated)
